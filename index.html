@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mowing Dashboard</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #fafaf7;
+  color: #1f2937;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1100px; margin: 0 auto; padding: 28px 24px 64px; }
+
+.header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+.title-block h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; color: #1b5e3f; }
+.title-block .sub { margin-top: 4px; font-size: 14px; color: #6b7280; }
+.refresh-btn { appearance: none; border: 1px solid #d1d5db; background: #ffffff; color: #374151; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background .15s, border-color .15s; }
+.refresh-btn:hover { background: #f3f4f6; border-color: #9ca3af; }
+
+.banner { margin: 20px 0 24px; padding: 12px 16px; background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid #2563eb; border-radius: 6px; font-size: 13px; color: #1e3a8a; line-height: 1.5; }
+.banner strong { color: #1e3a8a; }
+.banner.error { background: #fef2f2; border-color: #fecaca; border-left-color: #dc2626; color: #7f1d1d; }
+.banner.error strong { color: #7f1d1d; }
+
+.kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+.kpi { background: #ffffff; border: 1px solid #e7e5e0; border-radius: 12px; padding: 20px 22px; position: relative; overflow: hidden; }
+.kpi::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+.kpi.done::before { background: #16a34a; }
+.kpi.coming::before { background: #d97706; }
+.kpi.past::before { background: #dc2626; }
+.kpi-num { font-size: 44px; font-weight: 700; line-height: 1; letter-spacing: -0.03em; }
+.kpi.done .kpi-num { color: #16a34a; }
+.kpi.coming .kpi-num { color: #d97706; }
+.kpi.past .kpi-num { color: #dc2626; }
+.kpi-label { margin-top: 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6b7280; }
+.kpi-foot { margin-top: 12px; font-size: 12px; color: #6b7280; }
+
+.section { background: #ffffff; border: 1px solid #e7e5e0; border-radius: 12px; margin-bottom: 24px; overflow: hidden; }
+.section-head { padding: 14px 20px; border-bottom: 1px solid #f1efe9; display: flex; align-items: center; gap: 10px; }
+.section-head .pip { width: 8px; height: 8px; border-radius: 50%; }
+.section-head h2 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #374151; }
+.section-head .count { margin-left: auto; font-size: 12px; color: #6b7280; }
+.section-head .link { margin-left: auto; font-size: 12px; color: #1b5e3f; text-decoration: none; font-weight: 500; }
+.section-head .link:hover { text-decoration: underline; }
+.section.past .pip { background: #dc2626; }
+.section.coming .pip { background: #d97706; }
+.section.props .pip { background: #6b7280; }
+.section.cal .pip { background: #6b7280; }
+.section.photos .pip { background: #16a34a; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font-weight: 500; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #6b7280; padding: 10px 20px; background: #fbfaf6; border-bottom: 1px solid #f1efe9; }
+td { padding: 12px 20px; border-bottom: 1px solid #f4f2ec; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fdfcf7; }
+.date-cell { font-variant-numeric: tabular-nums; font-weight: 600; color: #1f2937; white-space: nowrap; width: 80px; }
+.prop-cell { font-weight: 600; }
+.contractor-cell { color: #4b5563; }
+.muted { color: #9ca3af; }
+.num-cell { font-variant-numeric: tabular-nums; }
+
+.type-chip { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; background: #f3f4f6; color: #4b5563; }
+.type-chip.LUX { background: #fef3c7; color: #92400e; }
+.type-chip.VAC1 { background: #dbeafe; color: #1e40af; }
+.type-chip.VAC2 { background: #e0e7ff; color: #3730a3; }
+.type-chip.RNT { background: #ede9fe; color: #5b21b6; }
+
+.age-chip { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.age-chip.fresh { background: #dcfce7; color: #166534; }
+.age-chip.ok { background: #f3f4f6; color: #4b5563; }
+.age-chip.aging { background: #fef3c7; color: #92400e; }
+.age-chip.stale { background: #fee2e2; color: #991b1b; }
+.age-chip.never { background: #f3f4f6; color: #9ca3af; }
+
+.late-chip { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #fee2e2; color: #991b1b; }
+
+.photo-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid #e7e5e0; vertical-align: middle; cursor: pointer; transition: transform .15s; background: #f3f4f6; }
+.photo-thumb:hover { transform: scale(1.05); border-color: #1b5e3f; }
+.photo-empty { display: inline-block; width: 48px; height: 48px; border-radius: 6px; background: #f3f4f6; border: 1px dashed #d1d5db; vertical-align: middle; }
+
+.photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; padding: 20px; }
+.photo-card { background: #ffffff; border: 1px solid #e7e5e0; border-radius: 10px; overflow: hidden; cursor: pointer; transition: transform .15s, box-shadow .15s, border-color .15s; }
+.photo-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,.06); border-color: #1b5e3f; }
+.photo-card img { width: 100%; height: 160px; object-fit: cover; display: block; background: #f3f4f6; }
+.photo-card .pc-meta { padding: 10px 12px; }
+.photo-card .pc-prop { font-size: 13px; font-weight: 600; color: #1f2937; }
+.photo-card .pc-date { font-size: 11px; color: #6b7280; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.photo-card.empty { background: #fafaf7; cursor: default; }
+.photo-card.empty:hover { transform: none; box-shadow: none; border-color: #e7e5e0; }
+.photo-card.empty .ph-placeholder { width: 100%; height: 160px; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 28px; background: #f3f4f6; }
+.photo-card.empty .pc-date { color: #9ca3af; font-style: italic; }
+
+.empty-state { padding: 24px 20px; text-align: center; color: #6b7280; font-size: 13px; }
+.empty-state strong { color: #166534; }
+
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; padding: 16px 20px 20px; }
+.cal-day { background: #fafaf7; border: 1px solid #efede5; border-radius: 8px; padding: 10px 8px; min-height: 130px; }
+.cal-day.today { background: #ecfdf5; border-color: #6ee7b7; }
+.cal-day-head { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6b7280; }
+.cal-day-num { font-size: 18px; font-weight: 700; margin: 2px 0 8px; color: #1f2937; }
+.cal-day.today .cal-day-num { color: #16a34a; }
+.cal-chip { font-size: 11px; background: #ffffff; border: 1px solid #e7e5e0; padding: 4px 6px; border-radius: 4px; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.cal-chip.done { background: #f0fdf4; border-color: #bbf7d0; }
+.cal-chip .prop-name { font-weight: 600; color: #1f2937; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #d1d5db; border-top-color: #1b5e3f; border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.foot { margin-top: 32px; padding-top: 20px; border-top: 1px solid #e7e5e0; font-size: 12px; color: #6b7280; line-height: 1.6; }
+.foot a { color: #1b5e3f; text-decoration: none; font-weight: 500; }
+.foot a:hover { text-decoration: underline; }
+.foot code { background: #f3f4f6; padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+
+.modal-overlay { display: none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,.85); z-index: 1000; align-items: center; justify-content: center; cursor: pointer; flex-direction: column; }
+.modal-overlay.show { display: flex; }
+.modal-overlay img { max-width: 92vw; max-height: 84vh; border-radius: 8px; box-shadow: 0 8px 40px rgba(0,0,0,.5); }
+.modal-caption { color: white; margin-top: 12px; font-size: 14px; text-align: center; opacity: 0.9; }
+.modal-close { position: absolute; top: 20px; right: 24px; color: white; font-size: 32px; cursor: pointer; background: none; border: none; }
+
+@media (max-width: 720px) {
+  .kpi-row { grid-template-columns: 1fr; }
+  .cal-grid { grid-template-columns: repeat(2, 1fr); }
+  .photo-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 14px; }
+  .photo-card img { height: 130px; }
+  th, td { padding: 10px 12px; font-size: 13px; }
+  .wrap { padding: 16px 12px 48px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="title-block">
+      <h1>🌱 Mowing Dashboard</h1>
+      <div class="sub" id="last-refresh"><span class="spinner"></span>Loading…</div>
+    </div>
+    <button class="refresh-btn" onclick="loadDashboard()">↻ Reload</button>
+  </div>
+
+  <div class="banner" id="status-banner">
+    <strong>Live data:</strong> Schedule snapshot refreshes every 15 min from SharePoint. Photos load from SharePoint — sign in to <code>oldwellco.sharepoint.com</code> once and they'll show here.
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi done"><div class="kpi-num" id="kpi-done">—</div><div class="kpi-label">Done — last 7 days</div><div class="kpi-foot" id="kpi-done-foot">&nbsp;</div></div>
+    <div class="kpi coming"><div class="kpi-num" id="kpi-coming">—</div><div class="kpi-label">Coming — next 7 days</div><div class="kpi-foot" id="kpi-coming-foot">&nbsp;</div></div>
+    <div class="kpi past"><div class="kpi-num" id="kpi-past">—</div><div class="kpi-label">Past Due</div><div class="kpi-foot" id="kpi-past-foot">&nbsp;</div></div>
+  </div>
+
+  <div class="section past">
+    <div class="section-head"><span class="pip"></span><h2>🚨 Past Due</h2><span class="count" id="past-count">—</span></div>
+    <div id="past-body"><div class="empty-state">Loading…</div></div>
+  </div>
+
+  <div class="section coming">
+    <div class="section-head"><span class="pip"></span><h2>📅 Coming This Week</h2><span class="count" id="coming-count">—</span></div>
+    <div id="coming-body"><div class="empty-state">Loading…</div></div>
+  </div>
+
+  <div class="section cal">
+    <div class="section-head"><span class="pip"></span><h2>🗓️ Week at a glance</h2><span class="count" id="cal-range">—</span></div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+
+  <div class="section props">
+    <div class="section-head"><span class="pip"></span><h2>📊 Properties — days since last mow</h2><span class="count" id="props-count">—</span></div>
+    <div id="props-body"><div class="empty-state">Loading…</div></div>
+  </div>
+
+  <div class="section photos">
+    <div class="section-head"><span class="pip"></span><h2>📸 Photo Wall — most recent per property</h2><a class="link" href="https://oldwellco.sharepoint.com/sites/Mowing/Lists/Schedule" target="_blank">View all photos →</a></div>
+    <div id="photos-body"><div class="empty-state">Loading…</div></div>
+  </div>
+
+  <div class="foot">
+    <strong>How this works:</strong> A Power Automate flow exports the SharePoint Schedule list to <code>data.json</code> every 15 min. This page reads that JSON on every reload. Photos still live in SharePoint — sign in to <a href="https://oldwellco.sharepoint.com/sites/Mowing" target="_blank">the Mowing site</a> once per session and they'll render here automatically.
+  </div>
+</div>
+
+<div class="modal-overlay" id="photo-modal" onclick="closeModal()">
+  <button class="modal-close" onclick="closeModal()">×</button>
+  <img id="modal-img" src="" alt="">
+  <div class="modal-caption" id="modal-caption"></div>
+</div>
+
+<script>
+const SP_BASE = 'https://oldwellco.sharepoint.com';
+
+function startOfToday() { const d = new Date(); d.setHours(0,0,0,0); return d; }
+function addDays(date, n) { const d = new Date(date); d.setDate(d.getDate()+n); return d; }
+function shortDate(iso) { const d = new Date(iso); return (d.getMonth()+1) + '/' + d.getDate(); }
+function isoDateLocal(date) { return date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0'); }
+function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeAttr(s) { return String(s ?? '').replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
+function daysBetween(a, b) { return Math.floor((a - b) / 86400000); }
+
+async function fetchData() {
+  // Cache-bust to ensure fresh JSON every reload
+  const r = await fetch('./data.json?t=' + Date.now(), { cache: 'no-store' });
+  if (!r.ok) throw new Error('data.json fetch failed: ' + r.status);
+  return await r.json();
+}
+
+function bucketJobs(jobs) {
+  const today = startOfToday();
+  const in7 = addDays(today, 7);
+  const past7 = addDays(today, -7);
+  const past = [], coming = [], done = [];
+  for (const j of jobs) {
+    const d = new Date(j.ScheduledDate); d.setHours(0,0,0,0);
+    if (j.Status === 'Done') { if (d >= past7) done.push(j); }
+    else if (j.Status === 'Pending') { if (d < today) past.push(j); else if (d <= in7) coming.push(j); }
+  }
+  past.sort((a,b) => a.ScheduledDate.localeCompare(b.ScheduledDate));
+  coming.sort((a,b) => a.ScheduledDate.localeCompare(b.ScheduledDate));
+  done.sort((a,b) => b.ScheduledDate.localeCompare(a.ScheduledDate));
+  return { past, coming, done };
+}
+
+function computeProperties(jobs) {
+  const today = startOfToday();
+  const map = new Map();
+  for (const j of jobs) {
+    const k = j.PropertyNickname || '?';
+    if (!map.has(k)) {
+      map.set(k, { nickname: k, propertyId: j.PropertyID, type: j.TypeID, contractor: j.ContractorName, lastDone: null, lastDoneJob: null, nextPending: null });
+    }
+    const entry = map.get(k);
+    const d = new Date(j.ScheduledDate); d.setHours(0,0,0,0);
+    if (j.Status === 'Done') {
+      if (!entry.lastDone || d > entry.lastDone) { entry.lastDone = d; entry.lastDoneJob = j; }
+    } else if (j.Status === 'Pending') {
+      if (d >= today && (!entry.nextPending || d < entry.nextPending)) entry.nextPending = d;
+    }
+  }
+  return Array.from(map.values()).sort((a,b) => {
+    const aDays = a.lastDone ? daysBetween(today, a.lastDone) : 9999;
+    const bDays = b.lastDone ? daysBetween(today, b.lastDone) : 9999;
+    return bDays - aDays;
+  });
+}
+
+function ageChip(days, type) {
+  if (days === null || days === undefined) return '<span class="age-chip never">Never</span>';
+  let aging = 14, stale = 21;
+  if (type === 'LUX') { aging = 10; stale = 14; }
+  else if (type === 'VAC2') { aging = 35; stale = 50; }
+  let cls = 'fresh';
+  if (days >= stale) cls = 'stale';
+  else if (days >= aging) cls = 'aging';
+  else if (days >= 7) cls = 'ok';
+  return `<span class="age-chip ${cls}">${days} d</span>`;
+}
+
+function getPhotoUrl(job) {
+  const atts = job?.Attachments || [];
+  if (atts.length === 0) return null;
+  const img = atts.find(a => /\.(jpe?g|png|gif|webp|heic)$/i.test(a.FileName));
+  if (!img) return null;
+  // SharePoint URLs are relative; prepend SP_BASE for cross-origin loading
+  return img.ServerRelativeUrl.startsWith('http') ? img.ServerRelativeUrl : SP_BASE + img.ServerRelativeUrl;
+}
+
+function propThumbCell(prop) {
+  if (!prop.lastDoneJob) return '<span class="photo-empty"></span>';
+  const url = getPhotoUrl(prop.lastDoneJob);
+  if (!url) return '<span class="photo-empty"></span>';
+  const caption = `${prop.nickname} · ${shortDate(prop.lastDoneJob.ScheduledDate)}`;
+  return `<img class="photo-thumb" src="${escapeAttr(url)}" alt="latest" onclick="openModal('${escapeAttr(url)}', '${escapeAttr(caption)}')">`;
+}
+
+function rowFor(job, opts={}) {
+  const lateBy = opts.showLate ? `<td class="num-cell"><span class="late-chip">${opts.daysLate} d</span></td>` : '';
+  return `<tr>
+    <td class="date-cell">${shortDate(job.ScheduledDate)}</td>
+    <td class="prop-cell">${escapeHtml(job.PropertyNickname)}</td>
+    <td><span class="type-chip ${escapeHtml(job.TypeID || '')}">${escapeHtml(job.TypeID || '')}</span></td>
+    <td class="contractor-cell">${escapeHtml(job.ContractorName || '')}</td>
+    ${lateBy}
+  </tr>`;
+}
+
+function tableFor(jobs, opts={}) {
+  const today = startOfToday();
+  const lateHead = opts.showLate ? '<th>Late by</th>' : '';
+  const rows = jobs.map(j => {
+    if (opts.showLate) {
+      const d = new Date(j.ScheduledDate); d.setHours(0,0,0,0);
+      return rowFor(j, { showLate: true, daysLate: daysBetween(today, d) });
+    }
+    return rowFor(j);
+  }).join('');
+  return `<table><thead><tr><th>Sched</th><th>Property</th><th>Type</th><th>Contractor</th>${lateHead}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function propertiesTable(props) {
+  const today = startOfToday();
+  const rows = props.map(p => {
+    const days = p.lastDone ? daysBetween(today, p.lastDone) : null;
+    const lastTxt = p.lastDone ? `${(p.lastDone.getMonth()+1)}/${p.lastDone.getDate()}` : '<span class="muted">—</span>';
+    const nextTxt = p.nextPending ? `${(p.nextPending.getMonth()+1)}/${p.nextPending.getDate()}` : '<span class="muted">—</span>';
+    return `<tr>
+      <td class="prop-cell">${escapeHtml(p.nickname)}</td>
+      <td><span class="type-chip ${escapeHtml(p.type || '')}">${escapeHtml(p.type || '')}</span></td>
+      <td class="contractor-cell">${escapeHtml(p.contractor || '')}</td>
+      <td class="num-cell">${ageChip(days, p.type)}</td>
+      <td class="date-cell">${lastTxt}</td>
+      <td class="date-cell">${nextTxt}</td>
+      <td>${propThumbCell(p)}</td>
+    </tr>`;
+  }).join('');
+  return `<table><thead><tr><th>Property</th><th>Type</th><th>Contractor</th><th>Days since</th><th>Last mow</th><th>Next due</th><th>Latest</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function photoWall(props) {
+  const sorted = [...props].sort((a,b) => {
+    if (a.lastDone && b.lastDone) return b.lastDone - a.lastDone;
+    if (a.lastDone) return -1;
+    if (b.lastDone) return 1;
+    return 0;
+  });
+  const cards = sorted.map(p => {
+    const url = p.lastDoneJob ? getPhotoUrl(p.lastDoneJob) : null;
+    if (!url) {
+      return `<div class="photo-card empty">
+        <div class="ph-placeholder">📷</div>
+        <div class="pc-meta"><div class="pc-prop">${escapeHtml(p.nickname)}</div><div class="pc-date">No photo yet</div></div>
+      </div>`;
+    }
+    const caption = `${p.nickname} · ${shortDate(p.lastDoneJob.ScheduledDate)}`;
+    return `<div class="photo-card" onclick="openModal('${escapeAttr(url)}', '${escapeAttr(caption)}')">
+      <img src="${escapeAttr(url)}" alt="${escapeAttr(p.nickname)}">
+      <div class="pc-meta"><div class="pc-prop">${escapeHtml(p.nickname)}</div><div class="pc-date">${shortDate(p.lastDoneJob.ScheduledDate)} · <span class="type-chip ${escapeAttr(p.type || '')}">${escapeHtml(p.type || '')}</span></div></div>
+    </div>`;
+  }).join('');
+  return `<div class="photo-grid">${cards}</div>`;
+}
+
+function renderCalendar(jobs) {
+  const today = startOfToday();
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  const byDate = {};
+  for (const j of jobs) {
+    const k = (j.ScheduledDate || '').substring(0,10);
+    if (!byDate[k]) byDate[k] = [];
+    byDate[k].push(j);
+  }
+  const labels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  for (let i=0; i<7; i++) {
+    const d = addDays(today, i);
+    const iso = isoDateLocal(d);
+    const dayJobs = byDate[iso] || [];
+    const cell = document.createElement('div');
+    cell.className = 'cal-day' + (i===0 ? ' today' : '');
+    let chips = '';
+    for (const j of dayJobs) {
+      const doneCls = j.Status === 'Done' ? ' done' : '';
+      chips += `<div class="cal-chip${doneCls}">
+        <span class="prop-name" title="${escapeAttr(j.PropertyNickname)}">${escapeHtml(j.PropertyNickname)}</span>
+        <span class="type-chip ${escapeAttr(j.TypeID || '')}">${escapeHtml(j.TypeID || '')}</span>
+      </div>`;
+    }
+    cell.innerHTML = `<div class="cal-day-head">${labels[d.getDay()]}</div><div class="cal-day-num">${d.getDate()}</div>${chips}`;
+    grid.appendChild(cell);
+  }
+  const start = today, end = addDays(today, 6);
+  document.getElementById('cal-range').textContent = `${labels[start.getDay()]} ${start.getMonth()+1}/${start.getDate()} → ${labels[end.getDay()]} ${end.getMonth()+1}/${end.getDate()}`;
+}
+
+function openModal(src, caption) {
+  document.getElementById('modal-img').src = src;
+  document.getElementById('modal-caption').textContent = caption || '';
+  document.getElementById('photo-modal').classList.add('show');
+}
+function closeModal() { document.getElementById('photo-modal').classList.remove('show'); }
+
+function renderDashboard(data) {
+  const jobs = data.jobs || [];
+  const { past, coming, done } = bucketJobs(jobs);
+
+  document.getElementById('kpi-done').textContent = done.length;
+  document.getElementById('kpi-coming').textContent = coming.length;
+  document.getElementById('kpi-past').textContent = past.length;
+  document.getElementById('kpi-coming-foot').textContent = coming.length === 0 ? 'Nothing scheduled in the next 7 days' : `Across ${new Set(coming.map(j => j.ContractorName).filter(Boolean)).size} contractors`;
+  document.getElementById('kpi-past-foot').textContent = past.length === 0 ? 'All caught up — nice' : 'Jump on these first';
+  document.getElementById('kpi-done-foot').textContent = done.length === 0 ? 'No photos in yet' : `${done.reduce((n,j) => n + (j.Attachments?.length||0), 0)} photos attached`;
+
+  document.getElementById('past-count').textContent = past.length === 1 ? '1 item' : past.length + ' items';
+  document.getElementById('past-body').innerHTML = past.length === 0
+    ? '<div class="empty-state">🎉 <strong>Nothing past due.</strong> Great work team.</div>'
+    : tableFor(past, { showLate: true });
+
+  document.getElementById('coming-count').textContent = coming.length === 1 ? '1 item' : coming.length + ' items';
+  document.getElementById('coming-body').innerHTML = coming.length === 0
+    ? '<div class="empty-state">Nothing on the schedule for the next 7 days.</div>'
+    : tableFor(coming);
+
+  renderCalendar(jobs);
+
+  const props = computeProperties(jobs);
+  document.getElementById('props-count').textContent = props.length === 1 ? '1 property' : props.length + ' properties';
+  document.getElementById('props-body').innerHTML = propertiesTable(props);
+  document.getElementById('photos-body').innerHTML = photoWall(props);
+}
+
+async function loadDashboard() {
+  const stamp = document.getElementById('last-refresh');
+  const banner = document.getElementById('status-banner');
+  banner.className = 'banner';
+  banner.innerHTML = '<strong>Live data:</strong> Schedule snapshot refreshes every 15 min from SharePoint. Photos load from SharePoint — sign in to <code>oldwellco.sharepoint.com</code> once and they\'ll show here.';
+  stamp.innerHTML = '<span class="spinner"></span>Loading…';
+  try {
+    const data = await fetchData();
+    renderDashboard(data);
+    const opts = { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' };
+    const updated = data.lastUpdated ? new Date(data.lastUpdated).toLocaleString('en-US', opts) : 'unknown';
+    stamp.textContent = `Snapshot · updated ${updated} · ${(data.jobs||[]).length} jobs`;
+  } catch (err) {
+    banner.className = 'banner error';
+    banner.innerHTML = `<strong>Couldn't load data:</strong> ${escapeHtml(err.message)}. The data.json file may not be published yet.`;
+    stamp.textContent = 'Load failed — see message above';
+  }
+}
+
+loadDashboard();
+setInterval(loadDashboard, 5 * 60 * 1000);
+</script>
+</body>
+</html>
