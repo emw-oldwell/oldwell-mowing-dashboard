@@ -1,0 +1,48 @@
+name: Sync schedule from SharePoint
+
+on:
+  schedule:
+    # Every 15 min. GitHub may delay 5-15 min during load; expect 15-30 min in practice.
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}  # manual trigger from the Actions tab
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install requests
+
+      - name: Run sync
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          SHAREPOINT_HOST: ${{ secrets.SHAREPOINT_HOST }}
+          SHAREPOINT_SITE_PATH: ${{ secrets.SHAREPOINT_SITE_PATH }}
+          GITHUB_REPO: ${{ github.repository }}
+        run: python scripts/sync.py
+
+      - name: Commit & push if changed
+        run: |
+          git config user.name "mowing-sync-bot"
+          git config user.email "actions@github.com"
+          git add data.json photos/ || true
+          if git diff --cached --quiet; then
+            echo "No changes."
+          else
+            git commit -m "Auto-sync $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push
+          fi
