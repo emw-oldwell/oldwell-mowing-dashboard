@@ -20,8 +20,11 @@ html, body {
 .header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
 .title-block h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; color: #1b5e3f; }
 .title-block .sub { margin-top: 4px; font-size: 14px; color: #6b7280; }
-.refresh-btn { appearance: none; border: 1px solid #d1d5db; background: #ffffff; color: #374151; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background .15s, border-color .15s; }
+.btn-row { display: flex; gap: 8px; }
+.refresh-btn { appearance: none; border: 1px solid #d1d5db; background: #ffffff; color: #374151; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background .15s, border-color .15s; text-decoration: none; display: inline-block; }
 .refresh-btn:hover { background: #f3f4f6; border-color: #9ca3af; }
+.refresh-btn.primary { background: #1b5e3f; border-color: #1b5e3f; color: #fff; }
+.refresh-btn.primary:hover { background: #164d33; border-color: #164d33; }
 
 .banner { margin: 20px 0 24px; padding: 12px 16px; background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid #2563eb; border-radius: 6px; font-size: 13px; color: #1e3a8a; line-height: 1.5; }
 .banner strong { color: #1e3a8a; }
@@ -141,7 +144,10 @@ tr:hover td { background: #fdfcf7; }
       <h1>🌱 Mowing Dashboard</h1>
       <div class="sub" id="last-refresh"><span class="spinner"></span>Loading…</div>
     </div>
-    <button class="refresh-btn" onclick="loadDashboard()">↻ Reload</button>
+    <div class="btn-row">
+      <a class="refresh-btn primary" href="https://github.com/emw-oldwell/oldwell-mowing-dashboard/actions/workflows/sync.yml" target="_blank" rel="noopener" title="Opens GitHub Actions. Click the 'Run workflow' button there to pull SharePoint changes immediately.">⟳ Sync now</a>
+      <button class="refresh-btn" onclick="loadDashboard()">↻ Reload</button>
+    </div>
   </div>
 
   <div class="banner" id="status-banner">
@@ -415,14 +421,19 @@ async function loadDashboard() {
   const stamp = document.getElementById('last-refresh');
   const banner = document.getElementById('status-banner');
   banner.className = 'banner';
-  banner.innerHTML = '<strong>Live data:</strong> Schedule snapshot refreshes every 15 min from SharePoint. Photos load from SharePoint — sign in to <code>oldwellco.sharepoint.com</code> once and they\'ll show here.';
+  banner.innerHTML = '<strong>Live data:</strong> Schedule auto-syncs every 15 min. If it looks stale, click <strong>⟳ Sync now</strong> to force a refresh from SharePoint.';
   stamp.innerHTML = '<span class="spinner"></span>Loading…';
   try {
     const data = await fetchData();
     renderDashboard(data);
     const opts = { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' };
     const updated = data.lastUpdated ? new Date(data.lastUpdated).toLocaleString('en-US', opts) : 'unknown';
+    const ageMin = data.lastUpdated ? Math.round((Date.now() - new Date(data.lastUpdated).getTime()) / 60000) : null;
     stamp.textContent = `Snapshot · updated ${updated} · ${(data.jobs||[]).length} jobs`;
+    if (ageMin !== null && ageMin >= 25) {
+      banner.className = 'banner error';
+      banner.innerHTML = `<strong>Snapshot is ${ageMin} min old.</strong> Auto-sync may have skipped — click <strong>⟳ Sync now</strong> at top right to fetch the latest from SharePoint.`;
+    }
   } catch (err) {
     banner.className = 'banner error';
     banner.innerHTML = `<strong>Couldn't load data:</strong> ${escapeHtml(err.message)}. The data.json file may not be published yet.`;
