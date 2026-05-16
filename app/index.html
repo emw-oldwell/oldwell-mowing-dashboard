@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
-<title>Old Well Field</title>
+<title>Old Well</title>
 <style>
 :root {
   --bg: #faf8f2;
@@ -43,9 +43,10 @@ html, body {
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
 }
-button, input, textarea { font: inherit; color: inherit; }
+button, input, textarea, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 a { color: var(--green-deep); }
+img { display: block; }
 
 .app {
   max-width: 480px;
@@ -55,7 +56,6 @@ a { color: var(--green-deep); }
   background: var(--bg);
   display: flex; flex-direction: column;
   position: relative;
-  overflow: hidden;
 }
 
 .topbar {
@@ -69,12 +69,17 @@ a { color: var(--green-deep); }
 .topbar.scrolled {
   border-bottom-color: var(--border);
   background: rgba(250,248,242,.94);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
 }
 .topbar h1 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.01em; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .topbar .icon-btn { width: 38px; height: 38px; border-radius: 50%; border: none; background: transparent; display: inline-flex; align-items: center; justify-content: center; color: var(--text-soft); transition: background .15s, color .15s; }
 .topbar .icon-btn:active { background: var(--surface-2); color: var(--text); }
+.topbar .right-btn {
+  padding: 7px 12px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.topbar .right-btn.primary { background: var(--green-deep); border-color: var(--green-deep); color: #fff; }
 
 .signin { flex: 1; display: flex; flex-direction: column; padding: 24px 20px 40px; }
 .signin .hero { margin-top: 28px; margin-bottom: 26px; }
@@ -98,14 +103,17 @@ a { color: var(--green-deep); }
   background: var(--green-pale); color: var(--green-deep);
   display: inline-flex; align-items: center; justify-content: center;
   font-weight: 700; font-size: 15px; letter-spacing: .02em;
-  border: 1px solid var(--green-soft);
-  flex-shrink: 0;
+  border: 1px solid var(--green-soft); flex-shrink: 0;
 }
 .crew-card .name { font-weight: 600; font-size: 16px; line-height: 1.25; }
 .crew-card .meta { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
 .crew-card .grow { flex: 1; min-width: 0; }
 .crew-card .chev { color: var(--text-muted); margin-left: 8px; flex-shrink: 0; }
-.crew-card.office .avatar { background: var(--surface-2); color: var(--text-soft); border-color: var(--border); }
+.crew-card.office { background: var(--green-deep); border-color: var(--green-deep); color: #fff; }
+.crew-card.office .name { color: #fff; }
+.crew-card.office .meta { color: rgba(255,255,255,.7); }
+.crew-card.office .avatar { background: rgba(255,255,255,.16); color: #fff; border-color: rgba(255,255,255,.2); }
+.crew-card.office .chev { color: rgba(255,255,255,.7); }
 .signin .demo-note {
   margin-top: 28px; padding: 12px 14px; background: var(--surface-2);
   border-radius: 10px; font-size: 12px; color: var(--text-soft); line-height: 1.5;
@@ -119,8 +127,9 @@ a { color: var(--green-deep); }
 .day-header h2 { margin: 4px 0 0; font-size: 28px; font-weight: 700; letter-spacing: -.02em; }
 .day-header .subtitle { margin-top: 6px; color: var(--text-soft); font-size: 15px; }
 
-.section-label { padding: 14px 20px 8px; color: var(--text-muted); font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+.section-label { padding: 14px 20px 8px; color: var(--text-muted); font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; display: flex; align-items: baseline; gap: 8px; }
 .section-label .count { color: var(--text-muted); font-weight: 600; }
+.section-label .right { margin-left: auto; font-size: 12px; }
 
 .stops { display: flex; flex-direction: column; gap: 10px; padding: 0 16px; }
 .stops + .section-label { padding-top: 24px; }
@@ -138,6 +147,7 @@ a { color: var(--green-deep); }
 .stop.late { border-left: 3px solid var(--red); padding-left: 13px; }
 .stop.way   { border-left: 3px solid var(--amber); padding-left: 13px; }
 .stop.start { border-left: 3px solid var(--blue); padding-left: 13px; }
+.stop.cancelled { opacity: .55; background: var(--surface-2); }
 .stop .row1 { display: flex; align-items: flex-start; gap: 10px; }
 .stop .nick { font-weight: 700; font-size: 17px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .stop .when { color: var(--text-muted); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -146,7 +156,7 @@ a { color: var(--green-deep); }
 .stop .photo-count { color: var(--text-muted); font-size: 12px; display: inline-flex; align-items: center; gap: 3px; }
 
 .empty-card {
-  text-align: center; padding: 28px 20px;
+  text-align: center; padding: 24px 20px;
   background: var(--surface); border: 1px dashed var(--border-strong); border-radius: 14px;
   color: var(--text-muted); font-size: 14px;
 }
@@ -170,8 +180,10 @@ a { color: var(--green-deep); }
 .status.way { background: var(--amber-soft); color: var(--amber); }
 .status.start { background: var(--blue-soft); color: var(--blue); }
 .status.late { background: var(--red-soft); color: var(--red); }
+.status.cancelled { background: var(--surface-2); color: var(--text-muted); }
 .status .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
+/* ===== Crew job detail ===== */
 .job { flex: 1; display: flex; flex-direction: column; padding-bottom: 140px; }
 .job-hero { padding: 0 20px 20px; }
 .job-hero .meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -184,7 +196,8 @@ a { color: var(--green-deep); }
   background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
   margin: 0 16px 10px; padding: 14px 16px;
 }
-.panel h3 { margin: 0 0 8px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); }
+.panel h3 { margin: 0 0 8px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); display: flex; align-items: baseline; gap: 8px; }
+.panel h3 .right { margin-left: auto; }
 .panel .last-photo {
   width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 10px; margin-top: 4px; display: block; background: var(--surface-2); cursor: zoom-in;
 }
@@ -200,25 +213,11 @@ textarea.notes {
 }
 textarea.notes:focus { outline: none; border-color: var(--green); background: #fff; box-shadow: 0 0 0 3px var(--green-soft); }
 
-.photo-strip {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 4px;
-}
-.photo-tile {
-  aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: var(--surface-2);
-  border: 1px solid var(--border); position: relative; cursor: zoom-in;
-}
-.photo-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.photo-tile .rm {
-  position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%;
-  background: rgba(0,0,0,.55); color: #fff; border: none; display: flex; align-items: center; justify-content: center; font-size: 13px; line-height: 1;
-}
-.photo-add {
-  aspect-ratio: 1; border-radius: 8px; border: 1.5px dashed var(--border-strong);
-  background: var(--bg); color: var(--text-muted);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  font-size: 11px; font-weight: 600;
-  cursor: pointer; transition: border-color .15s, color .15s, background .15s;
-}
+.photo-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 4px; }
+.photo-tile { aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: var(--surface-2); border: 1px solid var(--border); position: relative; cursor: zoom-in; }
+.photo-tile img { width: 100%; height: 100%; object-fit: cover; }
+.photo-tile .rm { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; border: none; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+.photo-add { aspect-ratio: 1; border-radius: 8px; border: 1.5px dashed var(--border-strong); background: var(--bg); color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 600; cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
 .photo-add .plus { font-size: 22px; line-height: 1; }
 .photo-add:active { border-color: var(--green); color: var(--green-deep); background: var(--green-pale); }
 
@@ -229,12 +228,9 @@ textarea.notes:focus { outline: none; border-color: var(--green); background: #f
   background: linear-gradient(180deg, rgba(250,248,242,0) 0%, var(--bg) 36%);
   pointer-events: none;
 }
-.action-bar .inner {
-  max-width: 480px; margin: 0 auto;
-  display: flex; flex-direction: column; gap: 8px;
-  pointer-events: auto;
-}
+.action-bar .inner { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
 .action-bar .row { display: flex; gap: 8px; }
+
 .btn {
   flex: 1;
   padding: 0 18px; border-radius: 12px; border: 1px solid var(--border);
@@ -247,17 +243,298 @@ textarea.notes:focus { outline: none; border-color: var(--green); background: #f
 .btn:active { transform: scale(.985); }
 .btn.primary { background: var(--green); color: #fff; border-color: var(--green); box-shadow: 0 6px 16px rgba(45,106,79,.22); }
 .btn.primary:active { background: var(--green-deep); }
-.btn.amber { background: var(--amber); color: #fff; border-color: var(--amber); box-shadow: 0 6px 16px rgba(176,111,15,.22); }
+.btn.amber { background: var(--amber); color: #fff; border-color: var(--amber); }
 .btn.ghost { background: transparent; border-color: transparent; color: var(--text-soft); }
+.btn.danger { background: transparent; color: var(--red); border-color: var(--red-soft); }
+.btn.small { min-height: 40px; padding: 0 14px; font-size: 14px; }
 .btn:disabled { opacity: .55; pointer-events: none; }
 
+/* ===== Office shell ===== */
+.page { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+
+.tabbar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: 35;
+  display: flex; justify-content: center;
+  background: rgba(250,248,242,.96);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border-top: 1px solid var(--border);
+  padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+}
+.tabbar .tabbar-inner { max-width: 480px; width: 100%; display: flex; justify-content: space-around; }
+.tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 4px; text-decoration: none;
+  color: var(--text-muted); font-size: 11px; font-weight: 600;
+  border-radius: 10px;
+  transition: color .15s;
+}
+.tab:active { background: var(--surface-2); }
+.tab.active { color: var(--green-deep); }
+.tab .tab-icon { display: inline-flex; }
+.tab .tab-icon svg { width: 22px; height: 22px; }
+
+/* KPI strip */
+.kpi-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 8px; padding: 0 16px 4px;
+}
+.kpi-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px 10px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.kpi-card .num {
+  font-size: 24px; font-weight: 700; line-height: 1; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-card .label {
+  font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted);
+  margin-top: 6px;
+}
+.kpi-card.green .num { color: var(--green-deep); }
+.kpi-card.amber .num { color: var(--amber); }
+.kpi-card.red .num { color: var(--red); }
+.kpi-card.blue .num { color: var(--blue); }
+
+/* Activity feed */
+.feed { padding: 0 16px; display: flex; flex-direction: column; gap: 8px; }
+.feed-item {
+  display: flex; gap: 12px; align-items: center;
+  padding: 12px 14px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  text-align: left; width: 100%;
+}
+.feed-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.feed-item .body { flex: 1; min-width: 0; font-size: 14px; }
+.feed-item .body strong { font-weight: 600; }
+.feed-item .time { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+.feed-item .thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: var(--surface-2); }
+.feed-item.done .dot { background: var(--green); }
+.feed-item.start .dot { background: var(--blue); }
+.feed-item.way .dot { background: var(--amber); }
+.feed-item.late .dot { background: var(--red); }
+.feed-empty { padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px; background: var(--surface); border: 1px dashed var(--border); border-radius: 12px; margin: 0 16px; }
+
+/* Horizontal photo strip */
+.h-photo-strip {
+  display: flex; gap: 8px; padding: 0 16px 4px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.h-photo-strip::-webkit-scrollbar { display: none; }
+.h-photo-strip .photo {
+  width: 120px; height: 120px; flex-shrink: 0;
+  border-radius: 10px; overflow: hidden; background: var(--surface-2);
+  position: relative; cursor: zoom-in;
+}
+.h-photo-strip .photo img { width: 100%; height: 100%; object-fit: cover; }
+.h-photo-strip .photo .cap {
+  position: absolute; bottom: 0; left: 0; right: 0; padding: 14px 8px 6px;
+  background: linear-gradient(180deg, transparent, rgba(0,0,0,.7));
+  color: #fff; font-size: 11px; font-weight: 600;
+}
+
+/* Day group on schedule */
+.day-group { margin-bottom: 2px; }
+.day-group-head { display: flex; align-items: baseline; gap: 8px; padding: 18px 20px 8px; }
+.day-group-head .day { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); }
+.day-group-head .num { font-size: 14px; color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+.day-group-head .today-pill { margin-left: auto; padding: 2px 9px; background: var(--green-soft); color: var(--green-deep); border-radius: 999px; font-size: 11px; font-weight: 700; }
+.day-group-body { padding: 0 16px; display: flex; flex-direction: column; gap: 8px; }
+.day-group-body .empty-day { padding: 12px 16px; background: var(--surface); border: 1px dashed var(--border); border-radius: 10px; color: var(--text-muted); font-size: 13px; text-align: center; }
+
+/* Week navigator */
+.week-nav {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 16px 12px;
+}
+.week-nav button {
+  width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text);
+  transition: background .15s, border-color .15s;
+}
+.week-nav button:active { background: var(--surface-2); border-color: var(--border-strong); }
+.week-nav .label { flex: 1; text-align: center; font-weight: 600; font-size: 15px; letter-spacing: -.01em; }
+.week-nav .today-link { font-size: 12px; color: var(--green-deep); font-weight: 600; padding: 4px 0; cursor: pointer; }
+
+/* FAB */
+.fab {
+  position: fixed; bottom: calc(78px + env(safe-area-inset-bottom)); right: 16px;
+  z-index: 38;
+  background: var(--green-deep); color: white;
+  border: none; border-radius: 999px;
+  padding: 12px 18px; font-weight: 700; font-size: 14px;
+  box-shadow: 0 10px 28px rgba(27,67,50,.40);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.fab:active { transform: scale(.97); }
+.fab svg { width: 18px; height: 18px; }
+
+/* Sheet (bottom modal) */
+.sheet-overlay {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(10,14,8,.45);
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s;
+}
+.sheet-overlay.show { opacity: 1; pointer-events: auto; }
+.sheet {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: 91;
+  background: var(--bg);
+  border-radius: 18px 18px 0 0;
+  max-height: 88dvh;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform .28s cubic-bezier(.2,.8,.3,1);
+  max-width: 480px; margin: 0 auto;
+  box-shadow: 0 -12px 32px rgba(0,0,0,.18);
+}
+.sheet.show { transform: translateY(0); }
+.sheet-handle {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; justify-content: center;
+  padding: 10px 0 6px;
+  background: var(--bg);
+}
+.sheet-handle::before {
+  content: '';
+  width: 38px; height: 4px; border-radius: 999px;
+  background: var(--border-strong);
+}
+.sheet-body { padding: 0 20px calc(28px + env(safe-area-inset-bottom)); }
+.sheet-body h2 { margin: 6px 0 6px; font-size: 24px; font-weight: 700; letter-spacing: -.02em; }
+.sheet-body .lede { color: var(--text-soft); font-size: 14px; margin-bottom: 16px; }
+
+/* Form fields */
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.field label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+.field input, .field select, .field textarea {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 14px; font-size: 16px; color: var(--text);
+  width: 100%;
+  appearance: none; -webkit-appearance: none;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none; border-color: var(--green); box-shadow: 0 0 0 3px var(--green-soft);
+}
+.field select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8e7d' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat; background-position: right 14px center;
+  padding-right: 36px;
+}
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Inline sheet stat block */
+.sheet-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+.sheet-stats .s {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px;
+}
+.sheet-stats .s .num { font-size: 18px; font-weight: 700; line-height: 1; }
+.sheet-stats .s .lbl { font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin-top: 4px; }
+
+/* Properties list */
+.prop-row {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px 14px;
+  display: flex; gap: 12px; align-items: center;
+  width: 100%; text-align: left;
+  transition: transform .12s, border-color .15s;
+}
+.prop-row:active { transform: scale(.99); border-color: var(--border-strong); }
+.prop-row .thumb { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: var(--surface-2); flex-shrink: 0; }
+.prop-row .thumb-empty {
+  width: 56px; height: 56px; border-radius: 10px; background: var(--surface-2); border: 1px dashed var(--border); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; color: var(--text-muted);
+}
+.prop-row .body { flex: 1; min-width: 0; }
+.prop-row .nick { font-weight: 700; font-size: 16px; }
+.prop-row .meta1 { display: flex; gap: 6px; align-items: center; margin-top: 4px; flex-wrap: wrap; }
+.prop-row .by { color: var(--text-soft); font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+.prop-row .stats { display: flex; gap: 12px; margin-top: 6px; font-size: 12px; align-items: center; }
+.age-chip { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.age-chip.fresh { background: var(--green-soft); color: var(--green-deep); }
+.age-chip.ok { background: var(--surface-2); color: var(--text-soft); }
+.age-chip.aging { background: var(--amber-soft); color: var(--amber); }
+.age-chip.stale { background: var(--red-soft); color: var(--red); }
+.age-chip.never { background: var(--surface-2); color: var(--text-muted); }
+.next-due { color: var(--text-soft); font-size: 12px; }
+
+/* Photos page mega grid */
+.photo-mega-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 0 12px;
+}
+@media (min-width: 480px) {
+  .photo-mega-grid { grid-template-columns: repeat(4, 1fr); }
+}
+.photo-mega-tile {
+  aspect-ratio: 1; position: relative; overflow: hidden; border-radius: 6px;
+  background: var(--surface-2); cursor: zoom-in;
+}
+.photo-mega-tile img { width: 100%; height: 100%; object-fit: cover; }
+.photo-mega-tile .caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 16px 6px 5px;
+  background: linear-gradient(180deg, transparent, rgba(0,0,0,.72));
+  color: #fff; font-size: 10px; font-weight: 600; line-height: 1.2;
+}
+.photo-mega-tile .caption .when { opacity: .85; font-weight: 500; }
+
+/* Sort / filter row */
+.sort-row {
+  padding: 4px 16px 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.sort-row .count { color: var(--text-muted); font-size: 13px; }
+.sort-row select {
+  padding: 7px 30px 7px 12px; border-radius: 8px; border: 1px solid var(--border);
+  background-color: var(--surface); font-size: 13px; font-weight: 600;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8e7d' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat; background-position: right 8px center;
+}
+
+/* Property detail hero */
+.prop-hero { padding: 0 20px 16px; }
+.prop-hero .meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.prop-hero .nick { font-size: 32px; font-weight: 800; letter-spacing: -.02em; margin: 8px 0 0; line-height: 1.1; }
+.prop-hero .by { color: var(--text-soft); font-size: 14px; margin-top: 4px; }
+.prop-hero .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+.prop-hero .stat-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px;
+}
+.prop-hero .stat-card .num { font-size: 22px; font-weight: 700; letter-spacing: -.02em; line-height: 1; }
+.prop-hero .stat-card .num.green { color: var(--green-deep); }
+.prop-hero .stat-card .num.amber { color: var(--amber); }
+.prop-hero .stat-card .num.red { color: var(--red); }
+.prop-hero .stat-card .lbl { font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); margin-top: 6px; }
+
+.timeline-list { padding: 0 16px; display: flex; flex-direction: column; gap: 8px; }
+.timeline-item {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px 14px;
+  display: flex; align-items: center; gap: 12px;
+  text-align: left; width: 100%;
+}
+.timeline-item .date-cell { font-weight: 700; font-variant-numeric: tabular-nums; flex-shrink: 0; min-width: 56px; }
+.timeline-item .body { flex: 1; min-width: 0; }
+.timeline-item .body .top { display: flex; align-items: baseline; gap: 8px; }
+.timeline-item .body .label { color: var(--text-soft); font-size: 13px; }
+.timeline-item .body .extra { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+.timeline-item img.thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex-shrink: 0; cursor: zoom-in; }
+
+/* Toast */
 .toast {
-  position: fixed; left: 50%; bottom: calc(120px + env(safe-area-inset-bottom));
+  position: fixed; left: 50%; bottom: calc(110px + env(safe-area-inset-bottom));
   transform: translateX(-50%) translateY(20px);
   background: var(--text); color: var(--bg);
   padding: 11px 18px; border-radius: 999px; font-size: 14px; font-weight: 500;
   box-shadow: var(--shadow-lg); opacity: 0; transition: opacity .2s, transform .2s;
-  z-index: 60; pointer-events: none;
+  z-index: 110; pointer-events: none;
   max-width: 90%;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -284,15 +561,13 @@ textarea.notes:focus { outline: none; border-color: var(--green); background: #f
 .lightbox img { max-width: 96vw; max-height: 86vh; border-radius: 8px; box-shadow: 0 8px 40px rgba(0,0,0,.5); }
 .lightbox .close { position: absolute; top: max(16px, env(safe-area-inset-top)); right: 16px; background: rgba(255,255,255,.15); color: #fff; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 22px; }
 
-.skel { background: linear-gradient(90deg, var(--surface-2), #eae8de, var(--surface-2)); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 8px; }
-@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
 .fade-in { animation: fadeIn .25s ease-out; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
 @media (min-width: 600px) {
   body { padding: 18px 0; background: #ecebe3; }
-  .app { box-shadow: var(--shadow-lg); border-radius: 22px; min-height: calc(100dvh - 36px); }
+  .app { box-shadow: var(--shadow-lg); border-radius: 22px; min-height: calc(100dvh - 36px); overflow: hidden; }
+  .tabbar, .fab, .sheet, .sheet-overlay { max-width: 480px; margin: 0 auto; }
 }
 </style>
 </head>
@@ -306,6 +581,11 @@ textarea.notes:focus { outline: none; border-color: var(--green); background: #f
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-body" id="sheet-body"></div>
+</div>
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <button class="close" onclick="event.stopPropagation(); closeLightbox()">×</button>
   <img id="lightbox-img" src="" alt="">
@@ -317,27 +597,55 @@ const STATE_KEY = 'oldwell-field-v1';
 const WEEK_LOOKAHEAD = 7;
 const UPCOMING_LOOKAHEAD = 21;
 
+const TYPE_LABELS = { LUX: 'Lux', VAC1: 'Vacant 1', VAC2: 'Vacant 2', RNT: 'Rental' };
+const TYPE_OPTIONS = ['LUX', 'VAC1', 'VAC2', 'RNT'];
+
 let state = loadState();
 let data = null;
+let officeUi = { scheduleWeekOffset: 0, propertySort: 'overdue', photosFilter: 'all' };
 
 function loadState() {
-  try { return JSON.parse(localStorage.getItem(STATE_KEY)) || { signedInAs: null, jobUpdates: {} }; }
-  catch { return { signedInAs: null, jobUpdates: {} }; }
+  try {
+    const s = JSON.parse(localStorage.getItem(STATE_KEY)) || {};
+    if (!s.jobUpdates) s.jobUpdates = {};
+    if (!s.customJobs) s.customJobs = [];
+    if (!s.signedInAs) s.signedInAs = null;
+    return s;
+  } catch { return { signedInAs: null, jobUpdates: {}, customJobs: [] }; }
 }
 function saveState() { localStorage.setItem(STATE_KEY, JSON.stringify(state)); }
 function jobUpdate(jobId) { if (!state.jobUpdates[jobId]) state.jobUpdates[jobId] = {}; return state.jobUpdates[jobId]; }
+
+function isCancelled(job) { return !!state.jobUpdates[job.JobID]?.cancelled; }
+function effectiveDate(job) {
+  const u = state.jobUpdates[job.JobID];
+  return new Date(u?.rescheduledTo || job.ScheduledDate);
+}
+function effectiveContractor(job) {
+  const u = state.jobUpdates[job.JobID];
+  return u?.reassignedTo || job.ContractorName;
+}
+function effectiveType(job) {
+  const u = state.jobUpdates[job.JobID];
+  return u?.typeOverride || job.TypeID;
+}
 function effectiveStatus(job) {
   const u = state.jobUpdates[job.JobID];
+  if (u?.cancelled) return 'Cancelled';
   if (u?.status) return u.status;
   return job.Status === 'Done' ? 'Done' : 'Pending';
 }
+function allJobs() { return [...(data?.jobs || []), ...(state.customJobs || [])]; }
+function activeJobs() { return allJobs().filter(j => !isCancelled(j)); }
 
 function parseDate(iso) { return new Date(iso); }
 function startOfToday() { const d = new Date(); d.setHours(0,0,0,0); return d; }
 function isSameDay(a, b) { return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
 function dayStart(d) { const n = new Date(d); n.setHours(0,0,0,0); return n; }
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
 function daysBetween(a, b) { return Math.round((dayStart(a) - dayStart(b)) / 86400000); }
 function shortDate(d) { return d.toLocaleDateString('en-US', {month:'short', day:'numeric'}); }
+function isoDateLocal(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 function dayLabel(d) {
   const diff = daysBetween(d, startOfToday());
   if (diff === 0) return 'Today';
@@ -354,6 +662,11 @@ function timeAgo(iso) {
   if (h < 24) return h + 'h ago';
   return new Date(iso).toLocaleDateString('en-US', {month:'short', day:'numeric'});
 }
+function weekStartFor(date) {
+  const d = dayStart(date);
+  const dow = d.getDay(); // 0 = Sun
+  return addDays(d, -((dow + 6) % 7)); // back to Monday
+}
 
 async function init() {
   try {
@@ -364,16 +677,25 @@ async function init() {
     document.getElementById('app').innerHTML = errorScreen(e.message);
     return;
   }
-  window.addEventListener('hashchange', render);
+  window.addEventListener('hashchange', () => { closeSheet(); render(); });
   render();
 }
 
 function render() {
   const app = document.getElementById('app');
-  if (!state.signedInAs) { app.innerHTML = signInScreen(); attachSignInHandlers(); attachScrollHandler(); return; }
+  if (!state.signedInAs) { app.innerHTML = signInScreen(); attachSignInHandlers(); attachScrollHandler(); window.scrollTo(0,0); return; }
+  const isOffice = state.signedInAs === 'OFFICE_ALL';
   const route = parseRoute();
-  if (route.name === 'job') { app.innerHTML = jobScreen(route.id); attachJobHandlers(route.id); }
-  else { app.innerHTML = dayScreen(); attachDayHandlers(); }
+  if (isOffice) {
+    if (route.name === 'property') { app.innerHTML = propertyDetailScreen(route.id); attachPropertyDetailHandlers(route.id); }
+    else if (route.name === 'schedule') { app.innerHTML = officeShell('schedule', officeScheduleScreen()); attachOfficeScheduleHandlers(); }
+    else if (route.name === 'properties') { app.innerHTML = officeShell('properties', officePropertiesScreen()); attachOfficePropertiesHandlers(); }
+    else if (route.name === 'photos') { app.innerHTML = officeShell('photos', officePhotosScreen()); attachOfficePhotosHandlers(); }
+    else { app.innerHTML = officeShell('today', officeTodayScreen()); attachOfficeTodayHandlers(); }
+  } else {
+    if (route.name === 'job') { app.innerHTML = jobScreen(route.id); attachJobHandlers(route.id); }
+    else { app.innerHTML = dayScreen(); attachDayHandlers(); }
+  }
   attachScrollHandler();
   window.scrollTo(0, 0);
 }
@@ -381,10 +703,13 @@ function render() {
 function parseRoute() {
   const h = location.hash.replace(/^#\/?/, '');
   if (h.startsWith('job/')) return { name: 'job', id: decodeURIComponent(h.substring(4)) };
+  if (h.startsWith('property/')) return { name: 'property', id: decodeURIComponent(h.substring(9)) };
+  if (h === 'schedule' || h === 'properties' || h === 'photos' || h === 'today') return { name: h };
   return { name: 'day' };
 }
 function go(path) { location.hash = path; }
 
+/* ===== Sign-in ===== */
 function signInScreen() {
   const contractors = uniqueContractors();
   const cards = contractors.map(c => `
@@ -401,27 +726,26 @@ function signInScreen() {
     <div class="signin fade-in">
       <div class="hero">
         <span class="badge">Old Well · Mowing</span>
-        <h1>Who's mowing today?</h1>
-        <div class="lede">Pick your crew to see your stops for the week.</div>
+        <h1>Who's logging in?</h1>
+        <div class="lede">Crew sees today's stops. Office sees the whole operation.</div>
       </div>
       <div class="crew-list">
-        ${cards}
         <button class="crew-card office" data-contractor="OFFICE_ALL">
-          <span class="avatar">ALL</span>
+          <span class="avatar">${iconSvg('home', 18)}</span>
           <div class="grow">
-            <div class="name">Office view</div>
-            <div class="meta">See every crew's day</div>
+            <div class="name">Office</div>
+            <div class="meta">Schedule, properties, photos, all crews</div>
           </div>
           <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
+        ${cards}
       </div>
       <div class="demo-note">
-        <strong>Preview build.</strong> Changes (start/finish, photos, notes) save to this device only — nothing syncs back to SharePoint yet. <button onclick="resetDemo()">Reset demo</button>
+        <strong>Preview build.</strong> Edits (start/finish, photos, notes, schedule changes) save to this device only — nothing syncs back to SharePoint yet. <button onclick="resetDemo()">Reset demo</button>
       </div>
     </div>
   `;
 }
-
 function attachSignInHandlers() {
   document.querySelectorAll('.crew-card').forEach(el => {
     el.addEventListener('click', () => {
@@ -433,11 +757,13 @@ function attachSignInHandlers() {
   });
 }
 
+/* ===== Crew: My Day ===== */
 function bucketJobs(jobs) {
   const today = startOfToday();
   const todayB = [], completedToday = [], thisWeek = [], upcoming = [];
   for (const j of jobs) {
-    const date = parseDate(j.ScheduledDate);
+    if (isCancelled(j)) continue;
+    const date = effectiveDate(j);
     const diff = daysBetween(date, today);
     const u = state.jobUpdates[j.JobID];
     const finishedToday = u?.finishedAt && isSameDay(new Date(u.finishedAt), today);
@@ -465,51 +791,43 @@ function dayScreen() {
   if (totalUpcoming === 0) {
     body = `
       <div class="center-state">
-        <div class="glyph">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></svg>
-        </div>
+        <div class="glyph">${iconSvg('leaf', 28)}</div>
         <h3>All caught up</h3>
         <p>Nothing on the schedule for the next three weeks.</p>
-      </div>
-    `;
+      </div>`;
   } else {
     body = `
       <div class="section-label">Today <span class="count">${todayJobs.length === 0 ? '· nothing scheduled' : '· ' + todayJobs.length + ' to go'}</span></div>
-      <div class="stops">${todayJobs.length ? todayJobs.map(stopCard).join('') : '<div class="empty-card">No active stops for today.</div>'}</div>
+      <div class="stops">${todayJobs.length ? todayJobs.map(j => stopCard(j, {jobRoute: true})).join('') : '<div class="empty-card">No active stops for today.</div>'}</div>
       ${completedToday.length ? `
         <div class="section-label">Finished today <span class="count">· ${completedToday.length}</span></div>
-        <div class="stops">${completedToday.map(stopCard).join('')}</div>
+        <div class="stops">${completedToday.map(j => stopCard(j, {jobRoute: true})).join('')}</div>
       ` : ''}
       ${thisWeek.length ? `
         <div class="section-label">This week <span class="count">· ${thisWeek.length}</span></div>
-        <div class="stops">${thisWeek.map(stopCard).join('')}</div>
+        <div class="stops">${thisWeek.map(j => stopCard(j, {jobRoute: true})).join('')}</div>
       ` : ''}
       ${upcoming.length ? `
         <div class="section-label">Coming up <span class="count">· next ${UPCOMING_LOOKAHEAD - WEEK_LOOKAHEAD} days</span></div>
-        <div class="stops">${upcoming.slice(0,10).map(stopCard).join('')}</div>
+        <div class="stops">${upcoming.slice(0,10).map(j => stopCard(j, {jobRoute: true})).join('')}</div>
       ` : ''}
     `;
   }
 
   return `
     <header class="topbar" id="topbar">
-      <span class="avatar" style="width:34px; height:34px; font-size:13px;">${initials(state.signedInAs === 'OFFICE_ALL' ? 'Office' : state.signedInAs)}</span>
-      <h1>${esc(displayName(state.signedInAs))}</h1>
-      <button class="icon-btn" id="signout-btn" title="Sign out">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      </button>
+      <span class="avatar" style="width:34px; height:34px; font-size:13px;">${initials(state.signedInAs)}</span>
+      <h1>${esc(state.signedInAs)}</h1>
+      <button class="icon-btn" id="signout-btn" title="Sign out">${iconSvg('logout', 20)}</button>
     </header>
     <div class="day-header fade-in">
       <div class="date">${new Date().toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'})}</div>
       <h2>${greetingFor(state.signedInAs)}</h2>
       <div class="subtitle">${dayHeaderSubtitle(todayJobs, completedToday, thisWeek)}</div>
     </div>
-    <div style="padding-bottom: max(40px, env(safe-area-inset-bottom));">
-      ${body}
-    </div>
+    <div style="padding-bottom: max(40px, env(safe-area-inset-bottom));">${body}</div>
   `;
 }
-
 function dayHeaderSubtitle(today, done, week) {
   if (today.length === 0 && done.length === 0 && week.length === 0) return 'No stops on deck this week.';
   if (today.length === 0 && done.length === 0) return `No stops today — ${week.length} on deck this week.`;
@@ -518,48 +836,49 @@ function dayHeaderSubtitle(today, done, week) {
   if (late > 0) return `${today.length} to go${done.length ? ` · ${done.length} done` : ''} · ${late} catch-up${late>1?'s':''}.`;
   return `${today.length} ${today.length===1?'stop':'stops'} to knock out${done.length ? ` · ${done.length} done` : ''}.`;
 }
-
 function attachDayHandlers() {
   document.querySelectorAll('.stop[data-job]').forEach(el => {
     el.addEventListener('click', () => go('/job/' + encodeURIComponent(el.dataset.job)));
   });
   const out = document.getElementById('signout-btn');
   if (out) out.addEventListener('click', () => {
-    if (confirm('Sign out and switch crew?')) {
-      state.signedInAs = null; saveState(); location.hash = '/'; render();
-    }
+    if (confirm('Sign out and switch user?')) { state.signedInAs = null; saveState(); location.hash = '/'; render(); }
   });
 }
 
-function stopCard(j) {
+function stopCard(j, opts = {}) {
   const status = effectiveStatus(j);
   const u = state.jobUpdates[j.JobID] || {};
-  const diff = j._diff;
+  const date = j._date || effectiveDate(j);
+  const diff = j._diff != null ? j._diff : daysBetween(date, startOfToday());
   const photos = (u.photos || []).length;
+  const showContractor = opts.alwaysShowContractor || state.signedInAs === 'OFFICE_ALL';
 
   let whenText;
   if (diff === 0) whenText = 'Today';
   else if (diff === 1) whenText = 'Tomorrow';
   else if (diff < 0) whenText = Math.abs(diff) + 'd late';
-  else if (diff <= 6) whenText = j._date.toLocaleDateString('en-US', {weekday: 'short'}) + ' ' + (j._date.getMonth()+1) + '/' + j._date.getDate();
-  else whenText = (j._date.getMonth()+1) + '/' + j._date.getDate();
+  else if (diff <= 6) whenText = date.toLocaleDateString('en-US', {weekday: 'short'}) + ' ' + (date.getMonth()+1) + '/' + date.getDate();
+  else whenText = (date.getMonth()+1) + '/' + date.getDate();
 
   let cardCls = '';
   let statusPill = '';
-  if (status === 'Done') { cardCls = ' done'; statusPill = `<span class="status done"><span class="dot"></span>Done${u.finishedAt ? ' · ' + timeAgo(u.finishedAt) : ''}</span>`; }
+  if (status === 'Cancelled') { cardCls = ' cancelled'; statusPill = `<span class="status cancelled"><span class="dot"></span>Cancelled</span>`; }
+  else if (status === 'Done') { cardCls = ' done'; statusPill = `<span class="status done"><span class="dot"></span>Done${u.finishedAt ? ' · ' + timeAgo(u.finishedAt) : ''}</span>`; }
   else if (status === 'InProgress') { cardCls = ' start'; statusPill = `<span class="status start"><span class="dot"></span>In progress</span>`; }
   else if (status === 'OnWay') { cardCls = ' way'; statusPill = `<span class="status way"><span class="dot"></span>On the way</span>`; }
   else if (diff < 0) { cardCls = ' late'; statusPill = `<span class="status late"><span class="dot"></span>${Math.abs(diff)}d late</span>`; }
 
+  const dataAttr = opts.openSheet ? `data-sheet-job="${escAttr(j.JobID)}"` : `data-job="${escAttr(j.JobID)}"`;
   return `
-    <button class="stop${cardCls}" data-job="${escAttr(j.JobID)}">
+    <button class="stop${cardCls}" ${dataAttr}>
       <div class="row1">
         <div class="nick">${esc(j.PropertyNickname || '?')}</div>
         <div class="when">${esc(whenText)}</div>
       </div>
       <div class="row2">
-        <span class="chip ${esc(j.TypeID || '')}">${esc(j.TypeID || '?')}</span>
-        ${state.signedInAs === 'OFFICE_ALL' ? `<span class="contractor">${esc(j.ContractorName || '')}</span>` : ''}
+        <span class="chip ${esc(effectiveType(j) || '')}">${esc(effectiveType(j) || '?')}</span>
+        ${showContractor ? `<span class="contractor">${esc(effectiveContractor(j) || '')}</span>` : ''}
         ${statusPill}
         ${photos > 0 ? `<span class="photo-count">📷 ${photos}</span>` : ''}
       </div>
@@ -567,13 +886,13 @@ function stopCard(j) {
   `;
 }
 
+/* ===== Crew: job detail ===== */
 function jobScreen(jobId) {
-  const job = (data.jobs || []).find(j => j.JobID === jobId);
+  const job = allJobs().find(j => j.JobID === jobId);
   if (!job) return errorScreen('Job not found: ' + jobId);
   const u = jobUpdate(jobId);
   const status = effectiveStatus(job);
-  const date = parseDate(job.ScheduledDate);
-
+  const date = effectiveDate(job);
   const last = lastVisitFor(job);
   const photos = u.photos || [];
   const photoTiles = photos.map(p => `
@@ -593,97 +912,70 @@ function jobScreen(jobId) {
     lastBlock = `
       <h3>Last visit · ${esc(shortDate(parseDate(last.date)))}</h3>
       <img class="last-photo" src="${escAttr(last.photoUrl)}" data-zoom="${escAttr(last.photoUrl)}">
-      <div class="last-meta">${esc(last.daysAgo)} days ago</div>
-    `;
+      <div class="last-meta">${esc(last.daysAgo)} days ago</div>`;
   } else if (last) {
-    lastBlock = `
-      <h3>Last visit · ${esc(shortDate(parseDate(last.date)))}</h3>
-      <div class="empty">No photo on file. ${esc(last.daysAgo)} days ago.</div>
-    `;
+    lastBlock = `<h3>Last visit · ${esc(shortDate(parseDate(last.date)))}</h3><div class="empty">No photo on file. ${esc(last.daysAgo)} days ago.</div>`;
   } else {
     lastBlock = `<h3>Last visit</h3><div class="empty">No previous mow on record.</div>`;
   }
 
   return `
     <header class="topbar" id="topbar">
-      <button class="icon-btn" id="back-btn">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
+      <button class="icon-btn" id="back-btn">${iconSvg('back', 22)}</button>
       <h1>${esc(job.PropertyNickname || 'Job')}</h1>
     </header>
     <div class="job fade-in">
       <div class="job-hero">
         <div class="meta">
-          <span class="chip ${esc(job.TypeID || '')}">${esc(job.TypeID || '?')}</span>
+          <span class="chip ${esc(effectiveType(job) || '')}">${esc(effectiveType(job) || '?')}</span>
           <span class="scheduled">${esc(dayLabel(date))} · session ${job.SessionNumber ?? '?'}</span>
         </div>
         <div class="nick">${esc(job.PropertyNickname || '?')}</div>
-        <div class="by">${esc(job.ContractorName || '')}</div>
+        <div class="by">${esc(effectiveContractor(job) || '')}</div>
         ${liveStatus ? `<div class="live-status">${liveStatus}</div>` : ''}
       </div>
-
       <div class="panel">${lastBlock}</div>
-
       <div class="panel">
         <h3>Photos this visit · ${photos.length}</h3>
         <div class="photo-strip">
           ${photoTiles}
           <label class="photo-add" for="photo-input">
-            <span class="plus">+</span>
-            <span>Add photo</span>
+            <span class="plus">+</span><span>Add photo</span>
           </label>
         </div>
         <input id="photo-input" type="file" accept="image/*" capture="environment" multiple style="display:none">
       </div>
-
       <div class="panel">
         <h3>Notes to office</h3>
         <textarea class="notes" id="notes-input" placeholder="Anything to flag? Sprinkler heads, gates, tenant issues, weather…">${esc(u.notes || '')}</textarea>
       </div>
     </div>
-
-    <div class="action-bar">
-      <div class="inner">${renderActions(job, status)}</div>
-    </div>
+    <div class="action-bar"><div class="inner">${renderActions(job, status)}</div></div>
   `;
 }
-
 function renderActions(job, status) {
   const u = jobUpdate(job.JobID);
-  if (status === 'Done') {
-    return `<div class="row"><button class="btn ghost" data-act="undo">↶ Re-open job</button></div>`;
-  }
-  if (u.startedAt && !u.finishedAt) {
-    return `<div class="row"><button class="btn primary" data-act="finish">✓ Finish job</button></div>`;
-  }
-  if (u.onMyWayAt && !u.startedAt) {
-    return `<div class="row"><button class="btn primary" data-act="start">▶ Start working</button></div>`;
-  }
+  if (status === 'Cancelled') return `<div class="row"><button class="btn ghost" data-act="uncancel">Restore job</button></div>`;
+  if (status === 'Done') return `<div class="row"><button class="btn ghost" data-act="undo">↶ Re-open job</button></div>`;
+  if (u.startedAt && !u.finishedAt) return `<div class="row"><button class="btn primary" data-act="finish">✓ Finish job</button></div>`;
+  if (u.onMyWayAt && !u.startedAt) return `<div class="row"><button class="btn primary" data-act="start">▶ Start working</button></div>`;
   return `
     <div class="row">
       <button class="btn" data-act="onway">On my way</button>
       <button class="btn primary" data-act="start">▶ Start</button>
-    </div>
-  `;
+    </div>`;
 }
-
 function attachJobHandlers(jobId) {
   const back = document.getElementById('back-btn');
   if (back) back.addEventListener('click', () => go('/'));
-
   const notes = document.getElementById('notes-input');
   if (notes) {
     let saveTimer;
     notes.addEventListener('input', () => {
       clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => {
-        const u = jobUpdate(jobId);
-        u.notes = notes.value;
-        saveState();
-      }, 350);
+      saveTimer = setTimeout(() => { const u = jobUpdate(jobId); u.notes = notes.value; saveState(); }, 350);
     });
   }
-
   const photoInput = document.getElementById('photo-input');
   if (photoInput) photoInput.addEventListener('change', async (e) => {
     const files = Array.from(e.target.files || []);
@@ -694,21 +986,16 @@ function attachJobHandlers(jobId) {
         const dataUrl = await fileToResizedDataUrl(f, 1280);
         const u = jobUpdate(jobId);
         if (!u.photos) u.photos = [];
-        u.photos.push({ id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), dataUrl, takenAt: new Date().toISOString() });
+        u.photos.push({ id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), dataUrl, takenAt: new Date().toISOString(), takenBy: state.signedInAs });
         added++;
       } catch (err) { console.warn('photo error', err); }
     }
-    saveState();
-    e.target.value = '';
-    render();
+    saveState(); e.target.value = ''; render();
     if (added > 0) showToast(added + (added === 1 ? ' photo added' : ' photos added'));
   });
 
   document.querySelectorAll('[data-zoom]').forEach(el => {
-    el.addEventListener('click', (ev) => {
-      if (ev.target.matches('[data-rm]')) return;
-      openLightbox(el.dataset.zoom);
-    });
+    el.addEventListener('click', (ev) => { if (ev.target.matches('[data-rm]')) return; openLightbox(el.dataset.zoom); });
   });
   document.querySelectorAll('[data-rm]').forEach(btn => {
     btn.addEventListener('click', (ev) => {
@@ -721,70 +1008,777 @@ function attachJobHandlers(jobId) {
   });
 
   document.querySelectorAll('[data-act]').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => {
       const act = btn.dataset.act;
       const u = jobUpdate(jobId);
       const now = new Date().toISOString();
-      if (act === 'onway') {
-        u.onMyWayAt = now; u.status = 'OnWay'; saveState();
-        showToast('Marked on the way'); render();
-      } else if (act === 'start') {
-        u.startedAt = now;
-        if (!u.onMyWayAt) u.onMyWayAt = now;
-        u.status = 'InProgress'; saveState();
-        showToast('Job started'); render();
+      if (act === 'onway') { u.onMyWayAt = now; u.status = 'OnWay'; saveState(); showToast('Marked on the way'); render(); }
+      else if (act === 'start') {
+        u.startedAt = now; if (!u.onMyWayAt) u.onMyWayAt = now;
+        u.status = 'InProgress'; saveState(); showToast('Job started'); render();
       } else if (act === 'finish') {
-        u.finishedAt = now;
-        u.status = 'Done';
-        saveState();
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            pos => { u.finishedLat = pos.coords.latitude; u.finishedLng = pos.coords.longitude; u.finishedAccuracy = pos.coords.accuracy; saveState(); },
-            () => {},
-            { timeout: 6000, maximumAge: 60000, enableHighAccuracy: false }
-          );
-        }
+        u.finishedAt = now; u.status = 'Done'; saveState();
+        if (navigator.geolocation) navigator.geolocation.getCurrentPosition(
+          pos => { u.finishedLat = pos.coords.latitude; u.finishedLng = pos.coords.longitude; u.finishedAccuracy = pos.coords.accuracy; saveState(); },
+          () => {}, { timeout: 6000, maximumAge: 60000, enableHighAccuracy: false }
+        );
         showToast('Job complete'); render();
       } else if (act === 'undo') {
         delete u.status; delete u.finishedAt; delete u.startedAt; delete u.onMyWayAt;
         delete u.finishedLat; delete u.finishedLng; delete u.finishedAccuracy;
         saveState(); showToast('Re-opened'); render();
+      } else if (act === 'uncancel') {
+        delete u.cancelled; saveState(); showToast('Restored'); render();
       }
     });
   });
 }
 
+/* ===== Office shell ===== */
+function officeShell(active, body) {
+  return `
+    <header class="topbar" id="topbar">
+      <span class="avatar" style="width:34px; height:34px; font-size:12px; background: var(--green-deep); color:#fff; border-color: var(--green-deep);">${iconSvg('home', 16)}</span>
+      <h1>${officeTitle(active)}</h1>
+      <button class="icon-btn" id="signout-btn" title="Sign out">${iconSvg('logout', 20)}</button>
+    </header>
+    <div class="page">${body}</div>
+    ${officeTabbar(active)}
+  `;
+}
+function officeTitle(active) {
+  return ({ today: 'Today', schedule: 'Schedule', properties: 'Properties', photos: 'Photos' })[active] || 'Office';
+}
+function officeTabbar(active) {
+  const tab = (key, label, icon) => `
+    <a class="tab${key === active ? ' active' : ''}" href="#/${key}">
+      <span class="tab-icon">${icon}</span><span class="tab-label">${label}</span>
+    </a>
+  `;
+  return `<nav class="tabbar"><div class="tabbar-inner">
+    ${tab('today', 'Today', iconSvg('home', 22))}
+    ${tab('schedule', 'Schedule', iconSvg('calendar', 22))}
+    ${tab('properties', 'Properties', iconSvg('grid', 22))}
+    ${tab('photos', 'Photos', iconSvg('camera', 22))}
+  </div></nav>`;
+}
+
+/* ===== Office: Today ===== */
+function officeTodayScreen() {
+  const today = startOfToday();
+  const jobs = activeJobs();
+
+  const todayJobs = jobs.filter(j => isSameDay(effectiveDate(j), today));
+  const doneToday = jobs.filter(j => {
+    const u = state.jobUpdates[j.JobID];
+    if (u?.finishedAt && isSameDay(new Date(u.finishedAt), today)) return true;
+    if (effectiveStatus(j) === 'Done' && isSameDay(effectiveDate(j), today)) return true;
+    return false;
+  });
+  const liveNow = jobs.filter(j => {
+    const u = state.jobUpdates[j.JobID];
+    return (u?.startedAt && !u?.finishedAt) || u?.status === 'InProgress' || u?.status === 'OnWay';
+  });
+  const lateNotDone = jobs.filter(j => {
+    if (effectiveStatus(j) === 'Done') return false;
+    return daysBetween(effectiveDate(j), today) < -2;
+  });
+  const weekJobs = jobs.filter(j => {
+    const d = effectiveDate(j);
+    return d >= today && d <= addDays(today, 7);
+  });
+
+  const activeToday = todayJobs.filter(j => effectiveStatus(j) !== 'Done');
+
+  const events = recentActivityEvents(7).slice(0, 8);
+  const photosToday = recentPhotos(2).slice(0, 12);
+
+  const photosBlock = photosToday.length ? `
+    <div class="section-label">Photos in <span class="count">· last 48h</span></div>
+    <div class="h-photo-strip">
+      ${photosToday.map(p => `
+        <div class="photo" data-zoom="${escAttr(p.url)}">
+          <img src="${escAttr(p.url)}" alt="">
+          <div class="cap">${esc(p.propertyName)}<br><span class="when">${esc(p.whenLabel)}</span></div>
+        </div>
+      `).join('')}
+    </div>` : '';
+
+  const eventsBlock = events.length ? `
+    <div class="section-label">Activity</div>
+    <div class="feed">
+      ${events.map(activityItem).join('')}
+    </div>` : `
+    <div class="section-label">Activity</div>
+    <div class="feed-empty">Nothing happened in the last 7 days. Crews will start showing up here once they tap Start or Finish on a job.</div>`;
+
+  const activeBlock = activeToday.length ? `
+    <div class="section-label">Today's stops <span class="count">· ${activeToday.length} to go</span></div>
+    <div class="stops">${activeToday.map(j => stopCard(Object.assign({}, j, {_date: effectiveDate(j), _diff: 0}), {openSheet: true, alwaysShowContractor: true})).join('')}</div>
+  ` : `
+    <div class="section-label">Today's stops <span class="count">· nothing scheduled</span></div>
+    <div class="stops"><div class="empty-card">No stops on the books for today.</div></div>
+  `;
+
+  return `
+    <div class="day-header fade-in">
+      <div class="date">${new Date().toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'})}</div>
+      <h2>Good ${greetingTime()}, Office</h2>
+      <div class="subtitle">${officeSubtitle(activeToday, doneToday, weekJobs)}</div>
+    </div>
+    <div class="kpi-strip">
+      <div class="kpi-card green"><div class="num">${doneToday.length}</div><div class="label">Done today</div></div>
+      <div class="kpi-card blue"><div class="num">${liveNow.length}</div><div class="label">Live now</div></div>
+      <div class="kpi-card red"><div class="num">${lateNotDone.length}</div><div class="label">Past due</div></div>
+      <div class="kpi-card"><div class="num">${weekJobs.length}</div><div class="label">Next 7d</div></div>
+    </div>
+    ${activeBlock}
+    ${photosBlock}
+    ${eventsBlock}
+  `;
+}
+function officeSubtitle(active, done, week) {
+  if (active.length === 0 && done.length === 0 && week.length === 0) return 'Nothing live and no stops queued.';
+  if (active.length === 0 && done.length === 0) return `${week.length} stops scheduled in the next week.`;
+  if (active.length === 0 && done.length > 0) return `All ${done.length} of today's stops are done.`;
+  return `${active.length} ${active.length===1?'stop':'stops'} live · ${done.length} done · ${week.length} on deck this week.`;
+}
+function activityItem(ev) {
+  const photoThumb = ev.photoUrl ? `<img class="thumb" src="${escAttr(ev.photoUrl)}" data-zoom="${escAttr(ev.photoUrl)}">` : '';
+  return `
+    <button class="feed-item ${esc(ev.kind)}" data-sheet-job="${escAttr(ev.jobId)}">
+      <span class="dot"></span>
+      <div class="body">
+        <div><strong>${esc(ev.contractor)}</strong> ${esc(ev.verb)} <strong>${esc(ev.property)}</strong></div>
+        <div class="time">${esc(ev.timeText)}${ev.photoCount ? ` · ${ev.photoCount} photo${ev.photoCount>1?'s':''}` : ''}</div>
+      </div>
+      ${photoThumb}
+    </button>`;
+}
+function attachOfficeTodayHandlers() {
+  attachOfficeCommonHandlers();
+  document.querySelectorAll('[data-zoom]').forEach(el => el.addEventListener('click', (ev) => { ev.stopPropagation(); openLightbox(el.dataset.zoom); }));
+  document.querySelectorAll('[data-sheet-job]').forEach(el => {
+    el.addEventListener('click', (ev) => { if (ev.target.matches('[data-zoom]')) return; openOfficeJobSheet(el.dataset.sheetJob); });
+  });
+}
+
+/* ===== Office: Schedule ===== */
+function officeScheduleScreen() {
+  const today = startOfToday();
+  const weekStart = addDays(weekStartFor(today), officeUi.scheduleWeekOffset * 7);
+  const weekEnd = addDays(weekStart, 7);
+
+  const weekJobs = activeJobs()
+    .filter(j => { const d = effectiveDate(j); return d >= weekStart && d < weekEnd; })
+    .sort((a,b) => effectiveDate(a) - effectiveDate(b));
+
+  const groups = {};
+  for (const j of weekJobs) {
+    const k = isoDateLocal(effectiveDate(j));
+    if (!groups[k]) groups[k] = [];
+    groups[k].push(j);
+  }
+
+  let groupsHtml = '';
+  for (let i = 0; i < 7; i++) {
+    const day = addDays(weekStart, i);
+    const key = isoDateLocal(day);
+    const dayJobs = groups[key] || [];
+    const isToday = isSameDay(day, today);
+    groupsHtml += `
+      <div class="day-group">
+        <div class="day-group-head">
+          <span class="day">${esc(day.toLocaleDateString('en-US', {weekday: 'long'}))}</span>
+          <span class="num">${day.getMonth()+1}/${day.getDate()}</span>
+          ${isToday ? '<span class="today-pill">Today</span>' : ''}
+        </div>
+        <div class="day-group-body">
+          ${dayJobs.length ? dayJobs.map(j => stopCard(Object.assign({}, j, {_date: effectiveDate(j), _diff: daysBetween(effectiveDate(j), today)}), {openSheet: true, alwaysShowContractor: true})).join('') : '<div class="empty-day">No jobs scheduled.</div>'}
+        </div>
+      </div>`;
+  }
+
+  const monthLabel = weekStart.toLocaleDateString('en-US', {month: 'long', year: 'numeric'});
+  const rangeLabel = `${weekStart.toLocaleDateString('en-US', {month:'short', day:'numeric'})} – ${addDays(weekEnd, -1).toLocaleDateString('en-US', {month:'short', day:'numeric'})}`;
+
+  return `
+    <div class="day-header fade-in" style="padding-bottom: 8px;">
+      <div class="date">${esc(monthLabel)}</div>
+      <h2>${esc(rangeLabel)}</h2>
+    </div>
+    <div class="week-nav">
+      <button id="prev-week" title="Previous week">${iconSvg('back', 18)}</button>
+      ${officeUi.scheduleWeekOffset !== 0 ? '<span class="today-link" id="this-week-link">Jump to this week</span>' : `<span style="flex:1; text-align:center; color: var(--text-muted); font-size: 13px;">${weekJobs.length} job${weekJobs.length===1?'':'s'} this week</span>`}
+      <button id="next-week" title="Next week"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>
+    ${groupsHtml}
+    <button class="fab" id="new-job-fab">${iconSvg('plus', 18)} New job</button>
+  `;
+}
+function attachOfficeScheduleHandlers() {
+  attachOfficeCommonHandlers();
+  document.getElementById('prev-week')?.addEventListener('click', () => { officeUi.scheduleWeekOffset--; render(); });
+  document.getElementById('next-week')?.addEventListener('click', () => { officeUi.scheduleWeekOffset++; render(); });
+  document.getElementById('this-week-link')?.addEventListener('click', () => { officeUi.scheduleWeekOffset = 0; render(); });
+  document.getElementById('new-job-fab')?.addEventListener('click', () => openNewJobSheet());
+  document.querySelectorAll('[data-sheet-job]').forEach(el => {
+    el.addEventListener('click', () => openOfficeJobSheet(el.dataset.sheetJob));
+  });
+}
+
+/* ===== Office: Properties ===== */
+function computeProperties() {
+  const today = startOfToday();
+  const map = new Map();
+  for (const j of activeJobs()) {
+    const k = j.PropertyID || j.PropertyNickname || '?';
+    if (!map.has(k)) map.set(k, {
+      id: k, propertyId: j.PropertyID, nickname: j.PropertyNickname, type: effectiveType(j),
+      contractor: effectiveContractor(j),
+      lastDone: null, lastDoneJob: null, nextPending: null, nextPendingJob: null,
+      done7: 0, total: 0
+    });
+    const p = map.get(k);
+    p.total++;
+    const d = dayStart(effectiveDate(j));
+    const status = effectiveStatus(j);
+    if (status === 'Done') {
+      if (!p.lastDone || d > p.lastDone) { p.lastDone = d; p.lastDoneJob = j; }
+      if (daysBetween(today, d) <= 7 && d <= today) p.done7++;
+    } else if (status !== 'Cancelled') {
+      if (d >= today && (!p.nextPending || d < p.nextPending)) { p.nextPending = d; p.nextPendingJob = j; }
+    }
+  }
+  return Array.from(map.values());
+}
+function ageBucket(days, type) {
+  if (days === null || days === undefined) return { cls: 'never', label: 'Never' };
+  let aging = 14, stale = 21;
+  if (type === 'LUX') { aging = 10; stale = 14; }
+  else if (type === 'VAC2') { aging = 35; stale = 50; }
+  if (days >= stale) return { cls: 'stale', label: days + 'd' };
+  if (days >= aging) return { cls: 'aging', label: days + 'd' };
+  if (days >= 7) return { cls: 'ok', label: days + 'd' };
+  return { cls: 'fresh', label: days + 'd' };
+}
+function officePropertiesScreen() {
+  const today = startOfToday();
+  const props = computeProperties();
+  const sortKey = officeUi.propertySort;
+  props.sort((a, b) => {
+    if (sortKey === 'overdue') {
+      const ad = a.lastDone ? daysBetween(today, a.lastDone) : 9999;
+      const bd = b.lastDone ? daysBetween(today, b.lastDone) : 9999;
+      return bd - ad;
+    } else if (sortKey === 'next') {
+      const an = a.nextPending ? +a.nextPending : Infinity;
+      const bn = b.nextPending ? +b.nextPending : Infinity;
+      return an - bn;
+    } else if (sortKey === 'name') {
+      return (a.nickname || '').localeCompare(b.nickname || '');
+    } else if (sortKey === 'contractor') {
+      return (a.contractor || '').localeCompare(b.contractor || '');
+    }
+    return 0;
+  });
+
+  const rows = props.map(p => {
+    const lastDays = p.lastDone ? daysBetween(today, p.lastDone) : null;
+    const bucket = ageBucket(lastDays, p.type);
+    const lastPhoto = (p.lastDoneJob?.Attachments || [])[0];
+    const nextText = p.nextPending ? shortDate(p.nextPending) : '—';
+    return `
+      <button class="prop-row" data-property="${escAttr(p.id)}">
+        ${lastPhoto ? `<img class="thumb" src="${escAttr(lastPhoto.ServerRelativeUrl)}" alt="">` : `<div class="thumb-empty">${iconSvg('leaf', 22)}</div>`}
+        <div class="body">
+          <div class="nick">${esc(p.nickname || '?')}</div>
+          <div class="meta1">
+            <span class="chip ${esc(p.type || '')}">${esc(p.type || '?')}</span>
+            <span class="by">${esc(p.contractor || '')}</span>
+          </div>
+          <div class="stats">
+            <span class="age-chip ${bucket.cls}">${esc(bucket.label)} since</span>
+            <span class="next-due">Next ${esc(nextText)}</span>
+          </div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>`;
+  }).join('');
+
+  return `
+    <div class="day-header fade-in" style="padding-bottom: 0;">
+      <h2>${props.length} ${props.length === 1 ? 'property' : 'properties'}</h2>
+      <div class="subtitle">${esc(propertiesSubtitle(props, today))}</div>
+    </div>
+    <div class="sort-row">
+      <span class="count">Sorted by</span>
+      <select id="prop-sort">
+        <option value="overdue" ${sortKey==='overdue'?'selected':''}>Most overdue</option>
+        <option value="next" ${sortKey==='next'?'selected':''}>Next due</option>
+        <option value="name" ${sortKey==='name'?'selected':''}>Name (A–Z)</option>
+        <option value="contractor" ${sortKey==='contractor'?'selected':''}>Contractor</option>
+      </select>
+    </div>
+    <div class="stops">${rows}</div>
+  `;
+}
+function propertiesSubtitle(props, today) {
+  const stale = props.filter(p => { const d = p.lastDone ? daysBetween(today, p.lastDone) : 9999; const b = ageBucket(d, p.type); return b.cls === 'stale'; }).length;
+  if (stale === 0) return 'Every property is on schedule.';
+  return `${stale} ${stale===1?'property is':'properties are'} past their refresh window.`;
+}
+function attachOfficePropertiesHandlers() {
+  attachOfficeCommonHandlers();
+  document.getElementById('prop-sort')?.addEventListener('change', (e) => { officeUi.propertySort = e.target.value; render(); });
+  document.querySelectorAll('[data-property]').forEach(el => el.addEventListener('click', () => go('/property/' + encodeURIComponent(el.dataset.property))));
+}
+
+/* ===== Property detail (office) ===== */
+function propertyDetailScreen(propId) {
+  const today = startOfToday();
+  const propJobs = activeJobs().filter(j => (j.PropertyID || j.PropertyNickname) === propId).sort((a,b) => effectiveDate(b) - effectiveDate(a));
+  if (!propJobs.length) return errorScreen('Property not found');
+  const sample = propJobs[0];
+  const nickname = sample.PropertyNickname;
+  const type = effectiveType(sample);
+  const contractor = effectiveContractor(sample);
+
+  const done = propJobs.filter(j => effectiveStatus(j) === 'Done').sort((a,b) => effectiveDate(b) - effectiveDate(a));
+  const upcoming = propJobs.filter(j => effectiveStatus(j) !== 'Done' && effectiveDate(j) >= today).sort((a,b) => effectiveDate(a) - effectiveDate(b));
+  const lastDone = done[0];
+  const lastDays = lastDone ? daysBetween(today, effectiveDate(lastDone)) : null;
+  const nextDate = upcoming[0] ? effectiveDate(upcoming[0]) : null;
+  const bucket = ageBucket(lastDays, type);
+
+  const upcomingBlock = upcoming.length ? `
+    <div class="section-label">Upcoming <span class="count">· next ${Math.min(upcoming.length, 6)}</span></div>
+    <div class="timeline-list">
+      ${upcoming.slice(0, 6).map(j => {
+        const d = effectiveDate(j);
+        const diff = daysBetween(d, today);
+        let pill = '';
+        const status = effectiveStatus(j);
+        if (status === 'InProgress') pill = '<span class="status start"><span class="dot"></span>In progress</span>';
+        else if (status === 'OnWay') pill = '<span class="status way"><span class="dot"></span>On the way</span>';
+        else if (diff < 0) pill = `<span class="status late"><span class="dot"></span>${Math.abs(diff)}d late</span>`;
+        return `
+          <button class="timeline-item" data-sheet-job="${escAttr(j.JobID)}">
+            <div class="date-cell">${esc(shortDate(d))}</div>
+            <div class="body">
+              <div class="top"><strong>Session ${j.SessionNumber ?? '?'}</strong> ${pill}</div>
+              <div class="label">${esc(effectiveContractor(j))}</div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>`;
+      }).join('')}
+    </div>` : '';
+
+  const historyBlock = done.length ? `
+    <div class="section-label">History <span class="count">· ${done.length} mowed</span></div>
+    <div class="timeline-list">
+      ${done.slice(0, 12).map(j => {
+        const d = effectiveDate(j);
+        const u = state.jobUpdates[j.JobID] || {};
+        const photos = [...(j.Attachments || []), ...((u.photos || []).map(p => ({ FileName: 'crew', ServerRelativeUrl: p.dataUrl })))];
+        const thumb = photos[0]?.ServerRelativeUrl;
+        return `
+          <button class="timeline-item" data-sheet-job="${escAttr(j.JobID)}">
+            <div class="date-cell">${esc(shortDate(d))}</div>
+            <div class="body">
+              <div class="top"><strong>Done</strong> <span class="status done"><span class="dot"></span>${esc(daysBetween(today, d))}d ago</span></div>
+              <div class="label">${esc(effectiveContractor(j))}${u.notes ? ' · note added' : ''}</div>
+            </div>
+            ${thumb ? `<img class="thumb" src="${escAttr(thumb)}" data-zoom="${escAttr(thumb)}">` : ''}
+          </button>`;
+      }).join('')}
+    </div>` : '';
+
+  return `
+    <header class="topbar" id="topbar">
+      <button class="icon-btn" id="back-btn">${iconSvg('back', 22)}</button>
+      <h1>${esc(nickname || 'Property')}</h1>
+    </header>
+    <div class="page fade-in">
+      <div class="prop-hero">
+        <div class="meta">
+          <span class="chip ${esc(type || '')}">${esc(type || '?')}</span>
+          <span style="color: var(--text-soft); font-size: 13px;">${esc(TYPE_LABELS[type] || '')}</span>
+        </div>
+        <div class="nick">${esc(nickname || '?')}</div>
+        <div class="by">${esc(contractor || '')}</div>
+        <div class="stats-row">
+          <div class="stat-card"><div class="num ${bucket.cls === 'stale' ? 'red' : bucket.cls === 'aging' ? 'amber' : 'green'}">${esc(lastDays != null ? lastDays + 'd' : '—')}</div><div class="lbl">Since last</div></div>
+          <div class="stat-card"><div class="num">${esc(nextDate ? shortDate(nextDate) : '—')}</div><div class="lbl">Next due</div></div>
+          <div class="stat-card"><div class="num">${done.length}</div><div class="lbl">Mowed total</div></div>
+        </div>
+      </div>
+      ${upcomingBlock}
+      ${historyBlock}
+    </div>
+    ${officeTabbar('properties')}
+  `;
+}
+function attachPropertyDetailHandlers(propId) {
+  document.getElementById('back-btn')?.addEventListener('click', () => go('/properties'));
+  document.querySelectorAll('[data-sheet-job]').forEach(el => {
+    el.addEventListener('click', (ev) => { if (ev.target.matches('[data-zoom]')) return; openOfficeJobSheet(el.dataset.sheetJob); });
+  });
+  document.querySelectorAll('[data-zoom]').forEach(el => el.addEventListener('click', (ev) => { ev.stopPropagation(); openLightbox(el.dataset.zoom); }));
+}
+
+/* ===== Office: Photos ===== */
+function officePhotosScreen() {
+  const photos = recentPhotos(60); // last 60 days
+  const tiles = photos.map(p => `
+    <div class="photo-mega-tile" data-zoom="${escAttr(p.url)}">
+      <img src="${escAttr(p.url)}" alt="">
+      <div class="caption">${esc(p.propertyName)}<br><span class="when">${esc(p.whenLabel)}</span></div>
+    </div>
+  `).join('');
+  return `
+    <div class="day-header fade-in" style="padding-bottom: 12px;">
+      <h2>${photos.length} photo${photos.length===1?'':'s'}</h2>
+      <div class="subtitle">From contractor uploads and crew app captures · most recent first.</div>
+    </div>
+    ${photos.length ? `<div class="photo-mega-grid">${tiles}</div>` : `<div class="feed-empty">No photos in the last 60 days.</div>`}
+  `;
+}
+function attachOfficePhotosHandlers() {
+  attachOfficeCommonHandlers();
+  document.querySelectorAll('[data-zoom]').forEach(el => el.addEventListener('click', () => openLightbox(el.dataset.zoom)));
+}
+
+/* ===== Office: shared handlers ===== */
+function attachOfficeCommonHandlers() {
+  document.getElementById('signout-btn')?.addEventListener('click', () => {
+    if (confirm('Sign out and switch user?')) { state.signedInAs = null; saveState(); location.hash = '/'; render(); }
+  });
+}
+
+/* ===== Office job edit sheet ===== */
+function openOfficeJobSheet(jobId) {
+  const job = allJobs().find(j => j.JobID === jobId);
+  if (!job) return;
+  const u = jobUpdate(jobId);
+  const status = effectiveStatus(job);
+  const date = effectiveDate(job);
+  const dateStr = isoDateLocal(date);
+  const contractors = uniqueContractors();
+  const u_photos = u.photos || [];
+  const serverAtts = job.Attachments || [];
+
+  const photoSection = (u_photos.length + serverAtts.length) ? `
+    <div class="field">
+      <label>Photos</label>
+      <div class="photo-strip">
+        ${serverAtts.map(a => `<div class="photo-tile" data-zoom="${escAttr(a.ServerRelativeUrl)}"><img src="${escAttr(a.ServerRelativeUrl)}" alt=""></div>`).join('')}
+        ${u_photos.map(p => `<div class="photo-tile" data-zoom="${escAttr(p.dataUrl)}"><img src="${escAttr(p.dataUrl)}" alt=""></div>`).join('')}
+      </div>
+    </div>` : '';
+
+  let statusActions = '';
+  if (status === 'Cancelled') {
+    statusActions = `<button class="btn primary" data-sheet-act="restore">Restore job</button>`;
+  } else if (status === 'Done') {
+    statusActions = `<button class="btn" data-sheet-act="reopen">Re-open</button><button class="btn danger" data-sheet-act="cancel">Cancel job</button>`;
+  } else {
+    statusActions = `<button class="btn primary" data-sheet-act="markdone">✓ Mark done</button><button class="btn danger" data-sheet-act="cancel">Cancel job</button>`;
+  }
+
+  const body = `
+    <div class="meta" style="display:flex; gap:8px; align-items:center; margin-bottom: 4px;">
+      <span class="chip ${esc(effectiveType(job) || '')}">${esc(effectiveType(job) || '?')}</span>
+      <span style="color: var(--text-soft); font-size: 13px;">Session ${job.SessionNumber ?? '?'}</span>
+      ${status !== 'Pending' ? renderStatusBadge(status, u) : ''}
+    </div>
+    <h2>${esc(job.PropertyNickname || '?')}</h2>
+    <div class="lede">${esc(esc(dayLabel(date)))} · ${esc(effectiveContractor(job) || '')}</div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Date</label>
+        <input id="sheet-date" type="date" value="${escAttr(dateStr)}">
+      </div>
+      <div class="field">
+        <label>Contractor</label>
+        <select id="sheet-contractor">
+          ${contractors.map(c => `<option value="${escAttr(c)}" ${c === effectiveContractor(job) ? 'selected' : ''}>${esc(c)}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Type</label>
+      <select id="sheet-type">
+        ${TYPE_OPTIONS.map(t => `<option value="${escAttr(t)}" ${t === effectiveType(job) ? 'selected' : ''}>${esc(t)} — ${esc(TYPE_LABELS[t] || '')}</option>`).join('')}
+      </select>
+    </div>
+
+    ${u.notes ? `<div class="field"><label>Crew note</label><div style="background: var(--green-pale); border: 1px solid var(--green-soft); border-radius: 10px; padding: 12px; font-size: 14px; color: var(--text);">${esc(u.notes)}</div></div>` : ''}
+
+    <div class="field">
+      <label>Office note</label>
+      <textarea id="sheet-officenote" class="notes" placeholder="Anything to pass to the crew or note for the file…">${esc(u.officeNote || '')}</textarea>
+    </div>
+
+    ${photoSection}
+
+    <div class="btn-row">${statusActions}</div>
+    <div style="margin-top: 8px;">
+      <button class="btn ghost" onclick="closeSheet()" style="width: 100%;">Cancel & close</button>
+    </div>
+    <div style="margin-top: 24px; text-align: center;">
+      <button class="btn small ghost" onclick="goPropertyFromSheet('${escAttr(job.PropertyID || job.PropertyNickname)}')">Open ${esc(job.PropertyNickname)} →</button>
+    </div>
+  `;
+  showSheet(body, () => {
+    document.querySelectorAll('#sheet [data-zoom]').forEach(el => el.addEventListener('click', (e) => { e.stopPropagation(); openLightbox(el.dataset.zoom); }));
+    const dateEl = document.getElementById('sheet-date');
+    const contractorEl = document.getElementById('sheet-contractor');
+    const typeEl = document.getElementById('sheet-type');
+    const noteEl = document.getElementById('sheet-officenote');
+
+    dateEl.addEventListener('change', () => {
+      if (!dateEl.value) return;
+      u.rescheduledTo = new Date(dateEl.value + 'T12:00:00').toISOString();
+      saveState(); showToast('Rescheduled'); render();
+    });
+    contractorEl.addEventListener('change', () => {
+      u.reassignedTo = contractorEl.value; saveState();
+      showToast('Reassigned to ' + contractorEl.value); render();
+    });
+    typeEl.addEventListener('change', () => {
+      u.typeOverride = typeEl.value; saveState();
+      showToast('Type updated'); render();
+    });
+    let noteTimer;
+    noteEl.addEventListener('input', () => {
+      clearTimeout(noteTimer);
+      noteTimer = setTimeout(() => { u.officeNote = noteEl.value; saveState(); }, 350);
+    });
+    document.querySelectorAll('[data-sheet-act]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const act = btn.dataset.sheetAct;
+        if (act === 'markdone') { u.status = 'Done'; u.finishedAt = new Date().toISOString(); u.finishedBy = 'office'; saveState(); showToast('Marked done'); closeSheet(); render(); }
+        else if (act === 'reopen') { delete u.status; delete u.finishedAt; delete u.startedAt; delete u.onMyWayAt; saveState(); showToast('Re-opened'); closeSheet(); render(); }
+        else if (act === 'cancel') {
+          if (!confirm('Cancel this job? It\'ll be hidden from crews and overview counts.')) return;
+          u.cancelled = true; saveState(); showToast('Cancelled'); closeSheet(); render();
+        }
+        else if (act === 'restore') { delete u.cancelled; saveState(); showToast('Restored'); closeSheet(); render(); }
+      });
+    });
+  });
+}
+function renderStatusBadge(status, u) {
+  if (status === 'Done') return `<span class="status done"><span class="dot"></span>Done${u.finishedAt ? ' · ' + timeAgo(u.finishedAt) : ''}</span>`;
+  if (status === 'InProgress') return `<span class="status start"><span class="dot"></span>In progress</span>`;
+  if (status === 'OnWay') return `<span class="status way"><span class="dot"></span>On the way</span>`;
+  if (status === 'Cancelled') return `<span class="status cancelled"><span class="dot"></span>Cancelled</span>`;
+  return '';
+}
+function goPropertyFromSheet(propId) { closeSheet(); go('/property/' + encodeURIComponent(propId)); }
+
+function openNewJobSheet() {
+  const properties = computeProperties();
+  const contractors = uniqueContractors();
+  const today = isoDateLocal(startOfToday());
+  const body = `
+    <h2>New job</h2>
+    <div class="lede">One-off mow or extra session — adds it to the schedule.</div>
+    <div class="field">
+      <label>Property</label>
+      <select id="new-prop">
+        ${properties.map(p => `<option value="${escAttr(p.id)}|${escAttr(p.nickname)}|${escAttr(p.type)}|${escAttr(p.contractor || '')}">${esc(p.nickname)} · ${esc(p.type || '')}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Date</label><input id="new-date" type="date" value="${escAttr(today)}"></div>
+      <div class="field"><label>Type</label>
+        <select id="new-type">
+          ${TYPE_OPTIONS.map(t => `<option value="${escAttr(t)}">${esc(t)} — ${esc(TYPE_LABELS[t] || '')}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Contractor</label>
+      <select id="new-contractor">
+        ${contractors.map(c => `<option value="${escAttr(c)}">${esc(c)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field">
+      <label>Office note (optional)</label>
+      <textarea id="new-note" class="notes" placeholder="Why is this on the schedule? (one-off, makeup, request, etc.)"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="closeSheet()">Cancel</button>
+      <button class="btn primary" id="new-save">Create job</button>
+    </div>
+  `;
+  showSheet(body, () => {
+    const propEl = document.getElementById('new-prop');
+    const propChange = () => {
+      const [, , type, contractor] = propEl.value.split('|');
+      if (type) document.getElementById('new-type').value = type;
+      if (contractor) document.getElementById('new-contractor').value = contractor;
+    };
+    propEl.addEventListener('change', propChange);
+    propChange();
+    document.getElementById('new-save').addEventListener('click', () => {
+      const [id, nick, type, contractor] = propEl.value.split('|');
+      const dateVal = document.getElementById('new-date').value;
+      if (!dateVal) { showToast('Pick a date'); return; }
+      const newJob = {
+        ID: -Date.now(),
+        JobID: 'JX-' + Date.now(),
+        PropertyID: id || nick,
+        PropertyNickname: nick,
+        ScheduledDate: new Date(dateVal + 'T12:00:00').toISOString(),
+        SessionNumber: 0,
+        Status: 'Pending',
+        TypeID: document.getElementById('new-type').value || type,
+        ContractorName: document.getElementById('new-contractor').value || contractor,
+        Attachments: []
+      };
+      const note = document.getElementById('new-note').value.trim();
+      if (note) jobUpdate(newJob.JobID).officeNote = note;
+      state.customJobs.push(newJob);
+      saveState(); closeSheet(); showToast('Job added'); render();
+    });
+  });
+}
+
+function showSheet(html, afterRender) {
+  document.getElementById('sheet-body').innerHTML = html;
+  document.getElementById('sheet-overlay').classList.add('show');
+  document.getElementById('sheet').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  if (afterRender) setTimeout(afterRender, 0);
+}
+function closeSheet() {
+  document.getElementById('sheet-overlay').classList.remove('show');
+  document.getElementById('sheet').classList.remove('show');
+  document.body.style.overflow = '';
+  setTimeout(() => { document.getElementById('sheet-body').innerHTML = ''; }, 300);
+}
+
+/* ===== Activity feed synthesis ===== */
+function recentActivityEvents(daysBack) {
+  const today = startOfToday();
+  const cutoff = addDays(today, -daysBack);
+  const events = [];
+  for (const j of activeJobs()) {
+    const u = state.jobUpdates[j.JobID];
+    const contractor = effectiveContractor(j) || 'A crew';
+    const property = j.PropertyNickname || '?';
+    // From localStorage updates
+    if (u?.finishedAt && new Date(u.finishedAt) >= cutoff) {
+      const photoCount = (u.photos || []).length;
+      const photoUrl = u.photos?.[0]?.dataUrl;
+      events.push({ kind: 'done', at: new Date(u.finishedAt), contractor, property, verb: 'finished', timeText: timeAgo(u.finishedAt), photoCount, photoUrl, jobId: j.JobID });
+    } else if (u?.startedAt && new Date(u.startedAt) >= cutoff) {
+      events.push({ kind: 'start', at: new Date(u.startedAt), contractor, property, verb: 'started', timeText: timeAgo(u.startedAt), jobId: j.JobID });
+    } else if (u?.onMyWayAt && new Date(u.onMyWayAt) >= cutoff) {
+      events.push({ kind: 'way', at: new Date(u.onMyWayAt), contractor, property, verb: 'is on the way to', timeText: timeAgo(u.onMyWayAt), jobId: j.JobID });
+    }
+    // From server data: Done jobs in window without an override
+    else if (j.Status === 'Done') {
+      const d = effectiveDate(j);
+      if (d >= cutoff && d <= today) {
+        const photoUrl = j.Attachments?.[0]?.ServerRelativeUrl;
+        events.push({ kind: 'done', at: d, contractor, property, verb: 'finished', timeText: shortDate(d), photoCount: (j.Attachments || []).length, photoUrl, jobId: j.JobID });
+      }
+    }
+  }
+  // Late warnings as a synthetic event
+  for (const j of activeJobs()) {
+    if (effectiveStatus(j) === 'Done') continue;
+    const d = effectiveDate(j);
+    const diff = daysBetween(d, today);
+    if (diff < -2 && diff >= -10) {
+      events.push({
+        kind: 'late', at: d,
+        contractor: effectiveContractor(j) || '?',
+        property: j.PropertyNickname || '?',
+        verb: 'is overdue at',
+        timeText: Math.abs(diff) + ' days late',
+        jobId: j.JobID
+      });
+    }
+  }
+  events.sort((a,b) => b.at - a.at);
+  return events;
+}
+
+/* ===== Photos collation ===== */
+function recentPhotos(daysBack) {
+  const today = startOfToday();
+  const cutoff = addDays(today, -daysBack);
+  const out = [];
+  for (const j of activeJobs()) {
+    const date = effectiveDate(j);
+    const u = state.jobUpdates[j.JobID];
+    // Server attachments
+    for (const a of (j.Attachments || [])) {
+      if (/\.(jpe?g|png|webp|heic)$/i.test(a.FileName)) {
+        const visitDate = u?.finishedAt ? new Date(u.finishedAt) : date;
+        if (visitDate >= cutoff && visitDate <= addDays(today, 1)) {
+          out.push({ url: a.ServerRelativeUrl, propertyName: j.PropertyNickname || '?', when: visitDate, whenLabel: relativeWhen(visitDate), jobId: j.JobID });
+        }
+      }
+    }
+    // Local crew photos
+    for (const p of (u?.photos || [])) {
+      const visitDate = new Date(p.takenAt || u.finishedAt || date);
+      if (visitDate >= cutoff && visitDate <= addDays(today, 1)) {
+        out.push({ url: p.dataUrl, propertyName: j.PropertyNickname || '?', when: visitDate, whenLabel: relativeWhen(visitDate), jobId: j.JobID });
+      }
+    }
+  }
+  out.sort((a,b) => b.when - a.when);
+  return out;
+}
+function relativeWhen(d) {
+  const diff = daysBetween(d, startOfToday());
+  if (diff === 0) return 'today';
+  if (diff === -1) return 'yesterday';
+  if (diff < 0 && diff >= -6) return Math.abs(diff) + 'd ago';
+  return shortDate(d);
+}
+
+/* ===== Helpers ===== */
 function jobsForCurrentUser() {
-  const all = data.jobs || [];
+  const all = activeJobs();
   if (state.signedInAs === 'OFFICE_ALL') return all;
-  return all.filter(j => j.ContractorName === state.signedInAs);
+  return all.filter(j => effectiveContractor(j) === state.signedInAs);
 }
 function uniqueContractors() {
   const set = new Set();
   for (const j of (data?.jobs || [])) if (j.ContractorName) set.add(j.ContractorName);
+  for (const j of (state?.customJobs || [])) if (j.ContractorName) set.add(j.ContractorName);
   return Array.from(set).sort();
 }
 function countJobsThisWeek(c) {
   const today = startOfToday();
-  const end = new Date(today); end.setDate(end.getDate() + 7);
-  return (data?.jobs || []).filter(j => {
-    if (j.ContractorName !== c) return false;
-    const d = parseDate(j.ScheduledDate);
+  const end = addDays(today, 7);
+  return activeJobs().filter(j => {
+    if (effectiveContractor(j) !== c) return false;
+    const d = effectiveDate(j);
     return d >= today && d <= end;
   }).length;
 }
 function lastVisitFor(job) {
   if (!data) return null;
   const today = startOfToday();
-  const sameProp = data.jobs.filter(j => j.PropertyID === job.PropertyID && j.JobID !== job.JobID)
+  const sameProp = activeJobs().filter(j => (j.PropertyID || j.PropertyNickname) === (job.PropertyID || job.PropertyNickname) && j.JobID !== job.JobID)
     .filter(j => {
       if (effectiveStatus(j) === 'Done') return true;
       const u = state.jobUpdates[j.JobID];
       return u?.finishedAt;
     })
     .sort((a, b) => {
-      const da = (state.jobUpdates[a.JobID]?.finishedAt) ? new Date(state.jobUpdates[a.JobID].finishedAt) : parseDate(a.ScheduledDate);
-      const db = (state.jobUpdates[b.JobID]?.finishedAt) ? new Date(state.jobUpdates[b.JobID].finishedAt) : parseDate(b.ScheduledDate);
+      const da = (state.jobUpdates[a.JobID]?.finishedAt) ? new Date(state.jobUpdates[a.JobID].finishedAt) : effectiveDate(a);
+      const db = (state.jobUpdates[b.JobID]?.finishedAt) ? new Date(state.jobUpdates[b.JobID].finishedAt) : effectiveDate(b);
       return db - da;
     });
   if (!sameProp.length) return null;
@@ -797,11 +1791,12 @@ function initials(name) {
   if (!name) return '?';
   return name.replace(/\s+/g, ' ').trim().split(' ').map(s => s[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
 }
-function displayName(c) { return c === 'OFFICE_ALL' ? 'Office view' : c; }
 function greetingFor(c) {
+  return `Good ${greetingTime()}, ${firstName(c)}`;
+}
+function greetingTime() {
   const h = new Date().getHours();
-  const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-  return `${g}, ${c === 'OFFICE_ALL' ? 'Office' : firstName(c)}`;
+  return h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
 }
 function firstName(c) { return c?.split(/\s+/)[0] || ''; }
 
@@ -848,13 +1843,12 @@ function closeLightbox() {
   document.getElementById('lightbox-img').src = '';
 }
 function resetDemo() {
-  if (!confirm('Wipe local demo data? You\'ll be signed out and any photos/notes you added on this device will be cleared.')) return;
+  if (!confirm('Wipe local demo data? You\'ll be signed out and any photos/notes/schedule edits on this device will be cleared.')) return;
   localStorage.removeItem(STATE_KEY);
   state = loadState();
   location.hash = '/';
   render();
 }
-
 function attachScrollHandler() {
   const tb = document.getElementById('topbar');
   if (!tb) return;
@@ -863,6 +1857,20 @@ function attachScrollHandler() {
   window._scrollH = onScroll;
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
+}
+
+function iconSvg(name, size = 22) {
+  const stroke = 'currentColor';
+  const sw = name === 'home' || name === 'grid' ? 2 : 2;
+  if (name === 'logout') return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`;
+  if (name === 'back') return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>`;
+  if (name === 'home') return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12L12 3l9 9"/><path d="M5 10v10a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1V10"/></svg>`;
+  if (name === 'calendar') return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
+  if (name === 'grid') return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`;
+  if (name === 'camera') return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`;
+  if (name === 'plus') return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+  if (name === 'leaf') return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></svg>`;
+  return '';
 }
 
 function errorScreen(msg) {
