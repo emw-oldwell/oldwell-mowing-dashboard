@@ -154,6 +154,16 @@ img { display: block; }
   cursor: pointer;
 }
 .switcher-signout:active { background: var(--red-soft); }
+
+.switcher-add-crew {
+  width: 100%; min-height: 48px;
+  padding: 12px;
+  background: var(--surface); border: 1px dashed var(--border-strong); border-radius: 12px;
+  font-size: 14px; font-weight: 600; color: var(--green-deep);
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+.switcher-add-crew:active { background: var(--green-pale); border-color: var(--green); }
 .sync-pill::before {
   content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor;
 }
@@ -713,9 +723,10 @@ function loadState() {
     const s = JSON.parse(localStorage.getItem(STATE_KEY)) || {};
     if (!s.jobUpdates) s.jobUpdates = {};
     if (!s.customJobs) s.customJobs = [];
+    if (!s.crews) s.crews = [];
     if (!s.signedInAs) s.signedInAs = null;
     return s;
-  } catch { return { signedInAs: null, jobUpdates: {}, customJobs: [] }; }
+  } catch { return { signedInAs: null, jobUpdates: {}, customJobs: [], crews: [] }; }
 }
 function saveState() { localStorage.setItem(STATE_KEY, JSON.stringify(state)); }
 // Use when mutating a specific job's overlay — persists locally AND pushes to sync API.
@@ -784,6 +795,19 @@ function mergeRemote(remote) {
     if (tombs[job.JobID]) continue; // skip tombstoned
     if (!state.customJobs.find(j => j.JobID === job.JobID)) {
       state.customJobs.push(job);
+      changed = true;
+    }
+  }
+  // 4) Merge crews. Server list is canonical; keep local-only entries that
+  // haven't synced yet (optimistic adds) so an offline crew add doesn't vanish.
+  const remoteCrews = remote.crews || [];
+  if (remoteCrews.length || (state.crews && state.crews.length)) {
+    state.crews = state.crews || [];
+    const serverNames = new Set(remoteCrews.map(c => c.name));
+    const localPending = state.crews.filter(c => !serverNames.has(c.name));
+    const merged = [...remoteCrews, ...localPending];
+    if (JSON.stringify(merged) !== JSON.stringify(state.crews)) {
+      state.crews = merged;
       changed = true;
     }
   }
@@ -1356,6 +1380,7 @@ function openSwitcherSheet() {
         ${isCurrent ? '<span class="check">✓</span>' : ''}
       </button>`;
   };
+  const isOffice = state.signedInAs === 'OFFICE_ALL';
   const body = `
     <h2>Switch user</h2>
     <div class="lede">Pick a crew or Office. Your draft photos and notes stay on this device.</div>
@@ -1363,6 +1388,7 @@ function openSwitcherSheet() {
       ${row('OFFICE_ALL', 'Office', 'Schedule, properties, photos, all crews', { office: true })}
       ${contractors.map(c => row(c, c, `${countJobsThisWeek(c)} this week`)).join('')}
     </div>
+    ${isOffice ? `<button class="switcher-add-crew" id="add-crew-btn">+ Add new crew</button>` : ''}
     <button class="switcher-signout" id="switcher-signout">Sign out · clear this device</button>
   `;
   showSheet(body, () => {
@@ -1377,12 +1403,101 @@ function openSwitcherSheet() {
         render();
       });
     });
+    document.getElementById('add-crew-btn')?.addEventListener('click', () => {
+      closeSheet();
+      setTimeout(openAddCrewSheet, 280);
+    });
     document.getElementById('switcher-signout')?.addEventListener('click', () => {
       closeSheet();
-      // small delay so the sheet animation completes before the native confirm
       setTimeout(() => resetDemo(), 280);
     });
   });
+}
+
+function openAddCrewSheet() {
+  const body = `
+    <h2>Add a crew</h2>
+    <div class="lede">Onboards a new contractor. Once added you can assign jobs to them in the office sheet, and they can sign in as themselves on their phone.</div>
+    <div class="field">
+      <label>Crew name <span style="color: var(--red);">*</span></label>
+      <input id="crew-name" type="text" autocapitalize="words" autocorrect="off" placeholder="e.g. Tony Bolt — or a business name">
+    </div>
+    <div class="field">
+      <label>Email <span style="color: var(--text-muted); font-weight: 500;">(optional)</span></label>
+      <input id="crew-email" type="email" autocapitalize="none" autocorrect="off" placeholder="tony@example.com">
+    </div>
+    <div class="field">
+      <label>Phone <span style="color: var(--text-muted); font-weight: 500;">(optional)</span></label>
+      <input id="crew-phone" type="tel" placeholder="(704) 555-…">
+    </div>
+    <div class="field">
+      <label>Notes <span style="color: var(--text-muted); font-weight: 500;">(optional)</span></label>
+      <textarea id="crew-notes" class="notes" placeholder="Covers LUX in Mooresville; weekend availability; preferred for VAC2; etc."></textarea>
+    </div>
+    <div class="btn-row" style="display: flex; gap: 8px; margin-top: 8px;">
+      <button class="btn ghost" onclick="closeSheet()" style="flex:1;">Cancel</button>
+      <button class="btn primary" id="crew-save" style="flex:1;">Add crew</button>
+    </div>
+  `;
+  showSheet(body, () => {
+    setTimeout(() => document.getElementById('crew-name')?.focus(), 100);
+    document.getElementById('crew-save')?.addEventListener('click', () => doAddCrew());
+    document.getElementById('crew-name')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); doAddCrew(); }
+    });
+  });
+}
+
+async function doAddCrew() {
+  const name = document.getElementById('crew-name').value.trim();
+  if (!name) { showToast('Crew name is required'); document.getElementById('crew-name').focus(); return; }
+  const email = document.getElementById('crew-email').value.trim();
+  const phone = document.getElementById('crew-phone').value.trim();
+  const notes = document.getElementById('crew-notes').value.trim();
+
+  // Optimistic local add so the new crew is selectable immediately.
+  state.crews = state.crews || [];
+  const now = new Date().toISOString();
+  const existing = state.crews.findIndex(c => c.name === name);
+  const crewObj = { name, email: email || undefined, phone: phone || undefined, notes: notes || undefined, addedBy: state.signedInAs || 'app', addedAt: now };
+  for (const k of Object.keys(crewObj)) if (crewObj[k] === undefined) delete crewObj[k];
+  if (existing >= 0) state.crews[existing] = { ...state.crews[existing], ...crewObj, addedAt: state.crews[existing].addedAt };
+  else state.crews.push(crewObj);
+  saveState();
+  closeSheet();
+  showToast(`Added ${name}`);
+  render();
+
+  if (!SYNC_BASE) return;
+  try {
+    const r = await fetch(SYNC_BASE + '/api/crew', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ crew: { name, email, phone, notes, addedBy: state.signedInAs || 'app' } }),
+    });
+    if (!r.ok) throw new Error('crew POST ' + r.status);
+    syncState.lastPushAt = Date.now();
+    updateSyncIndicator();
+  } catch (e) {
+    console.warn('crew sync failed', e);
+    showToast(`${name} saved on phone — sync will retry`);
+    setTimeout(() => doAddCrewRetry(name, email, phone, notes), 15000);
+  }
+}
+
+async function doAddCrewRetry(name, email, phone, notes) {
+  if (!SYNC_BASE) return;
+  try {
+    const r = await fetch(SYNC_BASE + '/api/crew', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ crew: { name, email, phone, notes, addedBy: state.signedInAs || 'app' } }),
+    });
+    if (r.ok) { syncState.lastPushAt = Date.now(); updateSyncIndicator(); }
+    else setTimeout(() => doAddCrewRetry(name, email, phone, notes), 30000);
+  } catch {
+    setTimeout(() => doAddCrewRetry(name, email, phone, notes), 30000);
+  }
 }
 
 function notifyOffice(job) {
@@ -2182,6 +2297,7 @@ function uniqueContractors() {
   const set = new Set();
   for (const j of (data?.jobs || [])) if (j.ContractorName) set.add(j.ContractorName);
   for (const j of (state?.customJobs || [])) if (j.ContractorName) set.add(j.ContractorName);
+  for (const c of (state?.crews || [])) if (c.name) set.add(c.name);
   return Array.from(set).sort();
 }
 function countJobsThisWeek(c) {
