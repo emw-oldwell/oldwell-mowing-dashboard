@@ -1,22 +1,33 @@
 #!/usr/bin/env python3
 """
-Sync mowing schedule + photos from SharePoint to this repo.
+Sync mowing schedule + photos between SharePoint and this repo.
 
-Reads via Microsoft Graph (app-only):
+READ DIRECTION (always on, requires Sites.Read.All Application permission):
   - Schedule list items (text fields)
   - Photos from the Mowing site's Documents library under /Photos/{JobID}/*
-    (the Photo Intake Power Automate flow drops a copy of each contractor
-    photo there; SharePoint list attachments aren't reachable app-only
-    because Azure ACS auth is retired for new tenants)
 
-New photos found in /Photos/{JobID}/ are downloaded into ./photos/
-and referenced from data.json via raw.githubusercontent URLs.
+WRITE DIRECTION (requires Sites.ReadWrite.All — admin consent in Azure):
+  - Pushes events.json overlays back to SharePoint Schedule rows:
+      * status=Done / finishedAt → SharePoint Status = "Done"
+      * rescheduledTo            → SharePoint ScheduledDate
+      * reassignedTo             → SharePoint ContractorName
+      * typeOverride             → SharePoint TypeID
+  - Creates new SharePoint rows for app-added customJobs (Add Property flow)
+  - Tombstoned (deleted) and cancelled overlays are NOT pushed in v1 —
+    accepted divergence. SharePoint keeps the original row; the app hides it.
+  - Degrades gracefully: if Sites.ReadWrite.All isn't granted yet, the push
+    step logs a hint and the read direction continues to work normally.
+
+CONFLICT MODEL: app overlays always win. If someone edits a row in
+SharePoint directly AND that field has an existing app overlay, the next
+sync overwrites the SharePoint edit. Tell office to edit in the app, not
+SP, for schedule changes. SP edits to NEW jobs (no overlay yet) are safe.
 
 Env vars expected:
   AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET
   SHAREPOINT_HOST       e.g. oldwellco.sharepoint.com
   SHAREPOINT_SITE_PATH  e.g. /sites/Mowing
-  GITHUB_REPO           e.g. emw-oldwell/oldwell-mowing-dashboard  (for photo URLs)
+  GITHUB_REPO           e.g. emw-oldwell/oldwell-mowing-dashboard
 """
 from __future__ import annotations
 
@@ -43,6 +54,7 @@ PHOTOS_ROOT = "Photos"        # folder inside the library where the flow drops p
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PHOTOS_DIR = REPO_ROOT / "photos"
 DATA_FILE = REPO_ROOT / "data.json"
+EVENTS_FILE = REPO_ROOT / "events.json"
 
 
 def get_graph_token() -> str:
@@ -195,6 +207,155 @@ def discover_existing_photos_for_job(job_id: str) -> list[dict]:
     return out
 
 
+def read_events_json() -> dict[str, Any]:
+    if not EVENTS_FILE.exists():
+        return {"events": {}, "customJobs": [], "tombstones": {}, "crews": [], "properties": []}
+    try:
+        j = json.loads(EVENTS_FILE.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {"events": {}, "customJobs": [], "tombstones": {}, "crews": [], "properties": []}
+    j.setdefault("events", {})
+    j.setdefault("customJobs", [])
+    j.setdefault("tombstones", {})
+    return j
+
+
+def push_overlays_to_sharepoint(
+    token: str,
+    site_id: str,
+    list_id: str,
+    sp_items_by_jobid: dict[str, dict],
+    events_data: dict,
+) -> dict[str, int | bool]:
+    """Apply app overlays + customJobs back to SharePoint Schedule.
+    Returns {updated, created, failed, skipped, permission_denied}.
+    Tolerates 403 cleanly (Sites.ReadWrite.All not granted yet)."""
+    events = events_data.get("events") or {}
+    custom_jobs = events_data.get("customJobs") or []
+    tombstones = events_data.get("tombstones") or {}
+
+    updated = 0
+    created = 0
+    failed = 0
+    skipped = 0
+
+    def patch_fields(item_id: str, fields: dict) -> tuple[bool, bool]:
+        """Returns (ok, permission_denied)."""
+        try:
+            r = requests.patch(
+                f"https://graph.microsoft.com/v1.0/sites/{site_id}/lists/{list_id}/items/{item_id}/fields",
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                json=fields,
+                timeout=30,
+            )
+        except requests.RequestException as e:
+            print(f"    ERROR patch: {e}", file=sys.stderr)
+            return False, False
+        if r.status_code in (401, 403):
+            return False, True
+        if not r.ok:
+            print(f"    FAILED patch {item_id}: {r.status_code} {r.text[:200]}", file=sys.stderr)
+            return False, False
+        return True, False
+
+    def post_item(fields: dict) -> tuple[bool, bool]:
+        try:
+            r = requests.post(
+                f"https://graph.microsoft.com/v1.0/sites/{site_id}/lists/{list_id}/items",
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                json={"fields": fields},
+                timeout=30,
+            )
+        except requests.RequestException as e:
+            print(f"    ERROR post: {e}", file=sys.stderr)
+            return False, False
+        if r.status_code in (401, 403):
+            return False, True
+        if not r.ok:
+            print(f"    FAILED post {fields.get('JobID')}: {r.status_code} {r.text[:200]}", file=sys.stderr)
+            return False, False
+        return True, False
+
+    # 1) Push overlays onto existing SharePoint rows
+    for job_id, overlay in events.items():
+        if job_id in tombstones:
+            skipped += 1
+            continue
+        sp_item = sp_items_by_jobid.get(job_id)
+        if not sp_item:
+            # No matching SP row — either a customJob handled below, or a stale overlay
+            continue
+        sp_fields = sp_item.get("fields", {})
+        item_id = sp_item.get("id")
+
+        to_update: dict[str, Any] = {}
+        # Status: only push Done (intermediate/cancelled stay app-only in v1)
+        if (overlay.get("status") == "Done" or overlay.get("finishedAt")) and sp_fields.get("Status") != "Done":
+            to_update["Status"] = "Done"
+        # ScheduledDate
+        new_date = overlay.get("rescheduledTo")
+        if new_date and sp_fields.get("ScheduledDate") != new_date:
+            to_update["ScheduledDate"] = new_date
+        # ContractorName
+        new_contractor = overlay.get("reassignedTo")
+        if new_contractor and sp_fields.get("ContractorName") != new_contractor:
+            to_update["ContractorName"] = new_contractor
+        # TypeID
+        new_type = overlay.get("typeOverride")
+        if new_type and sp_fields.get("TypeID") != new_type:
+            to_update["TypeID"] = new_type
+
+        if not to_update:
+            continue
+        ok, denied = patch_fields(item_id, to_update)
+        if denied:
+            print(
+                "  WARN: Sites.ReadWrite.All not granted — see SETUP_SHAREPOINT_WRITE.md. "
+                "Read direction continues; push skipped.",
+                file=sys.stderr,
+            )
+            return {"updated": updated, "created": created, "failed": failed, "skipped": skipped, "permission_denied": True}
+        if ok:
+            updated += 1
+            print(f"  pushed {job_id}: {list(to_update.keys())}", flush=True)
+        else:
+            failed += 1
+
+    # 2) Create new SharePoint rows for app-added customJobs
+    for job in custom_jobs:
+        jid = job.get("JobID")
+        if not jid or jid in tombstones:
+            skipped += 1
+            continue
+        if jid in sp_items_by_jobid:
+            continue  # already in SP
+        fields = {
+            "JobID": jid,
+            "PropertyID": job.get("PropertyID"),
+            "PropertyNickname": job.get("PropertyNickname"),
+            "ScheduledDate": job.get("ScheduledDate"),
+            "SessionNumber": job.get("SessionNumber"),
+            "Status": job.get("Status", "Pending"),
+            "TypeID": job.get("TypeID"),
+            "ContractorName": job.get("ContractorName"),
+        }
+        fields = {k: v for k, v in fields.items() if v not in (None, "")}
+        ok, denied = post_item(fields)
+        if denied:
+            print(
+                "  WARN: Sites.ReadWrite.All not granted — see SETUP_SHAREPOINT_WRITE.md.",
+                file=sys.stderr,
+            )
+            return {"updated": updated, "created": created, "failed": failed, "skipped": skipped, "permission_denied": True}
+        if ok:
+            created += 1
+            print(f"  created {jid} in SharePoint", flush=True)
+        else:
+            failed += 1
+
+    return {"updated": updated, "created": created, "failed": failed, "skipped": skipped, "permission_denied": False}
+
+
 def main() -> int:
     print("Fetching Graph token…", flush=True)
     token = get_graph_token()
@@ -218,6 +379,38 @@ def main() -> int:
         params={"$expand": "fields", "$top": "100"},
     )
     print(f"  got {len(items)} items", flush=True)
+
+    # === PUSH direction: apply events.json overlays back to SharePoint ===
+    print("Reading events.json overlays + customJobs…", flush=True)
+    events_data = read_events_json()
+    overlay_count = len(events_data.get("events") or {})
+    custom_count = len(events_data.get("customJobs") or [])
+    print(f"  overlays: {overlay_count}, customJobs: {custom_count}", flush=True)
+
+    if overlay_count or custom_count:
+        items_by_jobid = {
+            it.get("fields", {}).get("JobID"): it
+            for it in items
+            if it.get("fields", {}).get("JobID")
+        }
+        print("Pushing overlays + customJobs back to SharePoint…", flush=True)
+        push_res = push_overlays_to_sharepoint(token, site_id, list_id, items_by_jobid, events_data)
+        print(
+            f"  push result: {push_res['updated']} updated, {push_res['created']} created, "
+            f"{push_res['failed']} failed, {push_res['skipped']} skipped",
+            flush=True,
+        )
+        # Re-fetch so data.json reflects the post-push SharePoint state.
+        if (push_res["updated"] or push_res["created"]) and not push_res.get("permission_denied"):
+            print("Re-fetching Schedule after push…", flush=True)
+            items = graph_all(
+                token,
+                f"/sites/{site_id}/lists/{list_id}/items",
+                params={"$expand": "fields", "$top": "100"},
+            )
+            print(f"  got {len(items)} items (post-push)", flush=True)
+    else:
+        print("  no overlays or customJobs to push.", flush=True)
 
     print(f"Finding {PHOTOS_LIBRARY!r} drive…", flush=True)
     drive_id = find_drive_id(token, site_id)

@@ -1016,7 +1016,20 @@ function effectiveStatus(job) {
   if (u?.status) return u.status;
   return job.Status === 'Done' ? 'Done' : 'Pending';
 }
-function allJobs() { return [...(data?.jobs || []), ...(state.customJobs || [])]; }
+function allJobs() {
+  // Dedup by JobID. Once a customJob has been pushed to SharePoint by the
+  // sync workflow, it appears in both data.json AND events.customJobs;
+  // data.json wins (it's the canonical post-push state).
+  const seen = new Set();
+  const out = [];
+  for (const j of (data?.jobs || [])) {
+    if (j.JobID && !seen.has(j.JobID)) { seen.add(j.JobID); out.push(j); }
+  }
+  for (const j of (state.customJobs || [])) {
+    if (j.JobID && !seen.has(j.JobID)) { seen.add(j.JobID); out.push(j); }
+  }
+  return out;
+}
 function activeJobs() { return allJobs().filter(j => !isCancelled(j)); }
 
 function parseDate(iso) { return new Date(iso); }

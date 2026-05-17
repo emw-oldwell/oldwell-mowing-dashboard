@@ -243,14 +243,17 @@ function applyOverlay(job, ov) {
 }
 
 // Merge schedule + overlays + custom jobs, minus tombstones + cancelled.
+// Dedups by JobID: once two-way sync has pushed a customJob to SharePoint,
+// it appears in both data.jobs and events.customJobs; data.jobs wins.
 function mergeForDashboard(data, events) {
   const eventsMap = events?.events || {};
   const tombstones = events?.tombstones || {};
   const customJobs = events?.customJobs || [];
-  const all = [...(data.jobs || []), ...customJobs];
+  const seen = new Set();
   const out = [];
-  for (const job of all) {
-    if (!job.JobID || tombstones[job.JobID]) continue;
+  for (const job of [...(data.jobs || []), ...customJobs]) {
+    if (!job.JobID || tombstones[job.JobID] || seen.has(job.JobID)) continue;
+    seen.add(job.JobID);
     const ov = eventsMap[job.JobID];
     if (ov?.cancelled) continue;
     out.push(applyOverlay(job, ov));
