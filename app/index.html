@@ -95,6 +95,55 @@ img { display: block; }
   background: var(--surface-2); color: var(--text-muted);
   white-space: nowrap; flex-shrink: 0;
 }
+
+/* Avatar+name button in the topbar — tap anywhere on it to open the user switcher. */
+.user-switcher {
+  display: flex; align-items: center; gap: 10px;
+  flex: 1; min-width: 0;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  background: transparent; border: none;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+.user-switcher:active { background: var(--surface-2); }
+.user-switcher .user-name {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 17px; font-weight: 600; letter-spacing: -.01em; color: var(--text);
+}
+.user-switcher .chev-down { color: var(--text-muted); flex-shrink: 0; }
+
+.switcher-list { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 16px; }
+.switcher-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 16px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  text-align: left; width: 100%;
+  transition: transform .12s, border-color .15s;
+  min-height: 64px;
+}
+.switcher-row:active { transform: scale(.99); border-color: var(--green); }
+.switcher-row.current { border-color: var(--green); background: var(--green-pale); }
+.switcher-row .avatar { flex-shrink: 0; }
+.switcher-row .info { flex: 1; min-width: 0; }
+.switcher-row .name { font-weight: 600; font-size: 16px; line-height: 1.25; }
+.switcher-row .meta { color: var(--text-muted); font-size: 13px; margin-top: 2px; }
+.switcher-row .check { color: var(--green-deep); font-size: 18px; font-weight: 700; flex-shrink: 0; }
+.switcher-row.office { background: var(--green-deep); border-color: var(--green-deep); color: #fff; }
+.switcher-row.office .name { color: #fff; }
+.switcher-row.office .meta { color: rgba(255,255,255,.7); }
+.switcher-row.office .avatar { background: rgba(255,255,255,.16); color: #fff; border-color: rgba(255,255,255,.2); }
+.switcher-row.office.current { border-color: #fff; box-shadow: inset 0 0 0 2px rgba(255,255,255,.4); }
+.switcher-row.office.current .check { color: #fff; }
+
+.switcher-signout {
+  width: 100%; min-height: 48px;
+  padding: 12px;
+  background: transparent; border: 1px solid var(--border); border-radius: 12px;
+  font-size: 14px; font-weight: 600; color: var(--red);
+  cursor: pointer;
+}
+.switcher-signout:active { background: var(--red-soft); }
 .sync-pill::before {
   content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor;
 }
@@ -999,10 +1048,12 @@ function dayScreen() {
 
   return `
     <header class="topbar" id="topbar">
-      <span class="avatar" style="width:34px; height:34px; font-size:13px;">${initials(state.signedInAs)}</span>
-      <h1>${esc(state.signedInAs)}</h1>
+      <button class="user-switcher" id="user-switcher" aria-label="Switch user">
+        <span class="avatar" style="width:34px; height:34px; font-size:13px;">${initials(state.signedInAs)}</span>
+        <span class="user-name">${esc(state.signedInAs)}</span>
+        <svg class="chev-down" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
       <span class="sync-pill" id="sync-pill">…</span>
-      <button class="icon-btn" id="signout-btn" title="Sign out">${iconSvg('logout', 20)}</button>
     </header>
     <div class="day-header fade-in">
       <div class="date">${new Date().toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'})}</div>
@@ -1024,10 +1075,7 @@ function attachDayHandlers() {
   document.querySelectorAll('.stop[data-job]').forEach(el => {
     el.addEventListener('click', () => go('/job/' + encodeURIComponent(el.dataset.job)));
   });
-  const out = document.getElementById('signout-btn');
-  if (out) out.addEventListener('click', () => {
-    if (confirm('Sign out and switch user?')) { state.signedInAs = null; saveState(); location.hash = '/'; render(); }
-  });
+  attachUserSwitcherHandler();
 }
 
 function stopCard(j, opts = {}) {
@@ -1239,6 +1287,53 @@ function attachJobHandlers(jobId) {
   });
 }
 
+function openSwitcherSheet() {
+  const contractors = uniqueContractors();
+  const cur = state.signedInAs;
+  const row = (key, name, meta, opts = {}) => {
+    const isCurrent = cur === key;
+    const avatar = opts.office
+      ? `<span class="avatar" style="background: rgba(255,255,255,.16); color:#fff; border-color: rgba(255,255,255,.2);">${iconSvg('home', 18)}</span>`
+      : `<span class="avatar">${initials(name)}</span>`;
+    return `
+      <button class="switcher-row${opts.office ? ' office' : ''}${isCurrent ? ' current' : ''}" data-switch-to="${escAttr(key)}">
+        ${avatar}
+        <div class="info">
+          <div class="name">${esc(name)}</div>
+          <div class="meta">${esc(meta)}</div>
+        </div>
+        ${isCurrent ? '<span class="check">✓</span>' : ''}
+      </button>`;
+  };
+  const body = `
+    <h2>Switch user</h2>
+    <div class="lede">Pick a crew or Office. Your draft photos and notes stay on this device.</div>
+    <div class="switcher-list">
+      ${row('OFFICE_ALL', 'Office', 'Schedule, properties, photos, all crews', { office: true })}
+      ${contractors.map(c => row(c, c, `${countJobsThisWeek(c)} this week`)).join('')}
+    </div>
+    <button class="switcher-signout" id="switcher-signout">Sign out · clear this device</button>
+  `;
+  showSheet(body, () => {
+    document.querySelectorAll('[data-switch-to]').forEach(el => {
+      el.addEventListener('click', () => {
+        const to = el.dataset.switchTo;
+        closeSheet();
+        if (to === state.signedInAs) return;
+        state.signedInAs = to;
+        saveState();
+        location.hash = '/';
+        render();
+      });
+    });
+    document.getElementById('switcher-signout')?.addEventListener('click', () => {
+      closeSheet();
+      // small delay so the sheet animation completes before the native confirm
+      setTimeout(() => resetDemo(), 280);
+    });
+  });
+}
+
 function notifyOffice(job) {
   const u = state.jobUpdates[job.JobID] || {};
   const status = effectiveStatus(job);
@@ -1268,10 +1363,12 @@ function notifyOffice(job) {
 function officeShell(active, body) {
   return `
     <header class="topbar" id="topbar">
-      <span class="avatar" style="width:34px; height:34px; font-size:12px; background: var(--green-deep); color:#fff; border-color: var(--green-deep);">${iconSvg('home', 16)}</span>
-      <h1>${officeTitle(active)}</h1>
+      <button class="user-switcher" id="user-switcher" aria-label="Switch user">
+        <span class="avatar" style="width:34px; height:34px; font-size:12px; background: var(--green-deep); color:#fff; border-color: var(--green-deep);">${iconSvg('home', 16)}</span>
+        <span class="user-name">${officeTitle(active)}</span>
+        <svg class="chev-down" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
       <span class="sync-pill" id="sync-pill">…</span>
-      <button class="icon-btn" id="signout-btn" title="Sign out">${iconSvg('logout', 20)}</button>
     </header>
     <div class="page">${body}</div>
     ${officeTabbar(active)}
@@ -1716,9 +1813,11 @@ function attachOfficePhotosHandlers() {
 
 /* ===== Office: shared handlers ===== */
 function attachOfficeCommonHandlers() {
-  document.getElementById('signout-btn')?.addEventListener('click', () => {
-    if (confirm('Sign out and switch user?')) { state.signedInAs = null; saveState(); location.hash = '/'; render(); }
-  });
+  attachUserSwitcherHandler();
+}
+function attachUserSwitcherHandler() {
+  const sw = document.getElementById('user-switcher');
+  if (sw) sw.addEventListener('click', openSwitcherSheet);
 }
 
 /* ===== Office job edit sheet ===== */
