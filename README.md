@@ -10,6 +10,11 @@ Schedule, crew, and photo tracking for Old Well's mowing operation. Auto-syncs e
 - **Dashboard (`index.html`)** — wall-mounted / desktop overview. KPIs, past-due, calendar, properties, photo wall. Read-only.
 - **App (`app/index.html`)** — mobile-first. Crew signs in to see their day, mark on-way / start / finish, attach photos, leave notes. Office signs in to see live status across all crews, reschedule/reassign, manage properties.
 
+## Who uses what
+
+- **Crews (5 contractors)** — sign in on their phones, see their day, mark on-way / start / finish, attach photos, add notes.
+- **Office** — Eric (admin/owner), Jenna and Lois (day-to-day ops). Sign in as Office, see schedule across all crews, reassign / reschedule / cancel / mark-done, manage properties and crews, photo wall.
+
 ## Crew → Office update flow
 
 The app saves edits on each device. Tapping **Notify office** (or finishing a job) opens the phone's mail app with a prefilled summary addressed to `mow@oldwellco.com` — the shared inbox the office already monitors. Cross-device sync is live: edits commit to `events.json` via the Vercel write proxy, and every device picks them up within 30s.
