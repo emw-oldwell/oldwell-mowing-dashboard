@@ -6,8 +6,12 @@
 <meta name="theme-color" content="#1b4332">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Old Well">
 <meta name="mobile-web-app-capable" content="yes">
-<title>Old Well</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<title>Old Well Mowing</title>
 <style>
 :root {
   --bg: #faf8f2;
@@ -484,6 +488,22 @@ textarea.notes:focus { outline: none; border-color: var(--green); background: #f
 }
 .photo-mega-tile .caption .when { opacity: .85; font-weight: 500; }
 
+/* Contractor filter pills */
+.crew-filter {
+  display: flex; gap: 6px; padding: 0 16px 8px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.crew-filter::-webkit-scrollbar { display: none; }
+.crew-pill {
+  flex-shrink: 0; padding: 6px 12px; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-soft); white-space: nowrap;
+  cursor: pointer; transition: background .15s, border-color .15s, color .15s;
+}
+.crew-pill.active { background: var(--green-deep); border-color: var(--green-deep); color: #fff; }
+.crew-pill .count { opacity: .65; margin-left: 4px; font-weight: 500; }
+.crew-pill.active .count { opacity: .85; }
+
 /* Sort / filter row */
 .sort-row {
   padding: 4px 16px 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -596,13 +616,15 @@ const DATA_URL = '../data.json';
 const STATE_KEY = 'oldwell-field-v1';
 const WEEK_LOOKAHEAD = 7;
 const UPCOMING_LOOKAHEAD = 21;
+// Where crew taps "Notify office" — the already-monitored shared mailbox.
+const OFFICE_EMAIL = 'mow@oldwellco.com';
 
 const TYPE_LABELS = { LUX: 'Lux', VAC1: 'Vacant 1', VAC2: 'Vacant 2', RNT: 'Rental' };
 const TYPE_OPTIONS = ['LUX', 'VAC1', 'VAC2', 'RNT'];
 
 let state = loadState();
 let data = null;
-let officeUi = { scheduleWeekOffset: 0, propertySort: 'overdue', photosFilter: 'all' };
+let officeUi = { scheduleWeekOffset: 0, propertySort: 'overdue', photosFilter: 'all', contractorFilter: 'all' };
 
 function loadState() {
   try {
@@ -741,7 +763,7 @@ function signInScreen() {
         ${cards}
       </div>
       <div class="demo-note">
-        <strong>Preview build.</strong> Edits (start/finish, photos, notes, schedule changes) save to this device only — nothing syncs back to SharePoint yet. <button onclick="resetDemo()">Reset demo</button>
+        <strong>Heads up.</strong> Schedule and photos are live from the office. Your start/finish, photos, and notes save on this device — tap <em>Notify office</em> on any job to send a quick text or email summary. <button onclick="resetDemo()">Reset this device</button>
       </div>
     </div>
   `;
@@ -955,15 +977,16 @@ function jobScreen(jobId) {
 }
 function renderActions(job, status) {
   const u = jobUpdate(job.JobID);
-  if (status === 'Cancelled') return `<div class="row"><button class="btn ghost" data-act="uncancel">Restore job</button></div>`;
-  if (status === 'Done') return `<div class="row"><button class="btn ghost" data-act="undo">↶ Re-open job</button></div>`;
-  if (u.startedAt && !u.finishedAt) return `<div class="row"><button class="btn primary" data-act="finish">✓ Finish job</button></div>`;
-  if (u.onMyWayAt && !u.startedAt) return `<div class="row"><button class="btn primary" data-act="start">▶ Start working</button></div>`;
+  const notifyRow = `<div class="row"><button class="btn ghost" data-act="notify">✉ Notify office</button></div>`;
+  if (status === 'Cancelled') return `<div class="row"><button class="btn ghost" data-act="uncancel">Restore job</button></div>` + notifyRow;
+  if (status === 'Done') return `<div class="row"><button class="btn ghost" data-act="undo">↶ Re-open job</button></div>` + notifyRow;
+  if (u.startedAt && !u.finishedAt) return `<div class="row"><button class="btn primary" data-act="finish">✓ Finish job</button></div>` + notifyRow;
+  if (u.onMyWayAt && !u.startedAt) return `<div class="row"><button class="btn primary" data-act="start">▶ Start working</button></div>` + notifyRow;
   return `
     <div class="row">
       <button class="btn" data-act="onway">On my way</button>
       <button class="btn primary" data-act="start">▶ Start</button>
-    </div>`;
+    </div>` + notifyRow;
 }
 function attachJobHandlers(jobId) {
   const back = document.getElementById('back-btn');
@@ -1022,16 +1045,46 @@ function attachJobHandlers(jobId) {
           pos => { u.finishedLat = pos.coords.latitude; u.finishedLng = pos.coords.longitude; u.finishedAccuracy = pos.coords.accuracy; saveState(); },
           () => {}, { timeout: 6000, maximumAge: 60000, enableHighAccuracy: false }
         );
-        showToast('Job complete'); render();
+        showToast('Job complete — sending update to office');
+        render();
+        // Give geolocation a moment, then open the mail app with the structured update.
+        setTimeout(() => notifyOffice(job), 800);
       } else if (act === 'undo') {
         delete u.status; delete u.finishedAt; delete u.startedAt; delete u.onMyWayAt;
         delete u.finishedLat; delete u.finishedLng; delete u.finishedAccuracy;
         saveState(); showToast('Re-opened'); render();
       } else if (act === 'uncancel') {
         delete u.cancelled; saveState(); showToast('Restored'); render();
+      } else if (act === 'notify') {
+        notifyOffice(job);
       }
     });
   });
+}
+
+function notifyOffice(job) {
+  const u = state.jobUpdates[job.JobID] || {};
+  const status = effectiveStatus(job);
+  const lines = [];
+  lines.push(`Property: ${job.PropertyNickname || '?'} (${effectiveType(job) || ''})`);
+  lines.push(`Job: ${job.JobID} · session ${job.SessionNumber ?? '?'}`);
+  lines.push(`Crew: ${effectiveContractor(job) || state.signedInAs || ''}`);
+  lines.push(`Scheduled: ${shortDate(effectiveDate(job))}`);
+  let statusLine = 'Status: pending';
+  if (status === 'Done') statusLine = `Status: DONE${u.finishedAt ? ' at ' + new Date(u.finishedAt).toLocaleString() : ''}`;
+  else if (status === 'InProgress') statusLine = `Status: in progress (started ${u.startedAt ? new Date(u.startedAt).toLocaleString() : 'just now'})`;
+  else if (status === 'OnWay') statusLine = `Status: on the way (${u.onMyWayAt ? new Date(u.onMyWayAt).toLocaleString() : 'just now'})`;
+  else if (status === 'Cancelled') statusLine = 'Status: CANCELLED';
+  lines.push(statusLine);
+  const photoCount = (u.photos || []).length;
+  if (photoCount) lines.push(`Photos taken this visit: ${photoCount} (saved on phone)`);
+  if (u.notes) lines.push(`\nCrew note:\n${u.notes}`);
+  if (u.finishedLat && u.finishedLng) lines.push(`\nFinish location: https://maps.google.com/?q=${u.finishedLat},${u.finishedLng}`);
+  lines.push(`\n— Sent from Old Well Mowing app`);
+  const subject = `[${job.JobID}] ${job.PropertyNickname || '?'} · ${status === 'Done' ? 'DONE' : status === 'InProgress' ? 'Started' : status === 'OnWay' ? 'On the way' : status === 'Cancelled' ? 'Cancelled' : 'Update'}`;
+  const body = lines.join('\n');
+  const mailto = `mailto:${encodeURIComponent(OFFICE_EMAIL)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href = mailto;
 }
 
 /* ===== Office shell ===== */
@@ -1064,9 +1117,26 @@ function officeTabbar(active) {
 }
 
 /* ===== Office: Today ===== */
+function crewFilterPills(contextJobs) {
+  const counts = new Map();
+  for (const j of contextJobs) {
+    const c = effectiveContractor(j) || '—';
+    counts.set(c, (counts.get(c) || 0) + 1);
+  }
+  const total = contextJobs.length;
+  const contractors = Array.from(counts.entries()).sort((a,b) => b[1] - a[1]);
+  const active = officeUi.contractorFilter;
+  const pill = (key, label, count) => `<button class="crew-pill${active === key ? ' active' : ''}" data-crew-filter="${escAttr(key)}">${esc(label)}<span class="count">${count}</span></button>`;
+  return `<div class="crew-filter">${pill('all', 'All crews', total)}${contractors.map(([c, n]) => pill(c, firstName(c) || c, n)).join('')}</div>`;
+}
+function applyCrewFilter(jobs) {
+  if (officeUi.contractorFilter === 'all') return jobs;
+  return jobs.filter(j => effectiveContractor(j) === officeUi.contractorFilter);
+}
 function officeTodayScreen() {
   const today = startOfToday();
-  const jobs = activeJobs();
+  const allActive = activeJobs();
+  const jobs = applyCrewFilter(allActive);
 
   const todayJobs = jobs.filter(j => isSameDay(effectiveDate(j), today));
   const doneToday = jobs.filter(j => {
@@ -1120,6 +1190,12 @@ function officeTodayScreen() {
     <div class="stops"><div class="empty-card">No stops on the books for today.</div></div>
   `;
 
+  // Filter context = jobs active today OR upcoming this week, so the pills reflect "who has work right now"
+  const filterCtx = allActive.filter(j => {
+    const d = effectiveDate(j);
+    return d >= addDays(today, -3) && d <= addDays(today, 7);
+  });
+
   return `
     <div class="day-header fade-in">
       <div class="date">${new Date().toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'})}</div>
@@ -1132,6 +1208,7 @@ function officeTodayScreen() {
       <div class="kpi-card red"><div class="num">${lateNotDone.length}</div><div class="label">Past due</div></div>
       <div class="kpi-card"><div class="num">${weekJobs.length}</div><div class="label">Next 7d</div></div>
     </div>
+    ${crewFilterPills(filterCtx)}
     ${activeBlock}
     ${photosBlock}
     ${eventsBlock}
@@ -1157,9 +1234,15 @@ function activityItem(ev) {
 }
 function attachOfficeTodayHandlers() {
   attachOfficeCommonHandlers();
+  attachCrewFilterHandlers();
   document.querySelectorAll('[data-zoom]').forEach(el => el.addEventListener('click', (ev) => { ev.stopPropagation(); openLightbox(el.dataset.zoom); }));
   document.querySelectorAll('[data-sheet-job]').forEach(el => {
     el.addEventListener('click', (ev) => { if (ev.target.matches('[data-zoom]')) return; openOfficeJobSheet(el.dataset.sheetJob); });
+  });
+}
+function attachCrewFilterHandlers() {
+  document.querySelectorAll('[data-crew-filter]').forEach(el => {
+    el.addEventListener('click', () => { officeUi.contractorFilter = el.dataset.crewFilter; render(); });
   });
 }
 
@@ -1169,8 +1252,9 @@ function officeScheduleScreen() {
   const weekStart = addDays(weekStartFor(today), officeUi.scheduleWeekOffset * 7);
   const weekEnd = addDays(weekStart, 7);
 
-  const weekJobs = activeJobs()
-    .filter(j => { const d = effectiveDate(j); return d >= weekStart && d < weekEnd; })
+  const allWeekJobs = activeJobs()
+    .filter(j => { const d = effectiveDate(j); return d >= weekStart && d < weekEnd; });
+  const weekJobs = applyCrewFilter(allWeekJobs)
     .sort((a,b) => effectiveDate(a) - effectiveDate(b));
 
   const groups = {};
@@ -1212,12 +1296,14 @@ function officeScheduleScreen() {
       ${officeUi.scheduleWeekOffset !== 0 ? '<span class="today-link" id="this-week-link">Jump to this week</span>' : `<span style="flex:1; text-align:center; color: var(--text-muted); font-size: 13px;">${weekJobs.length} job${weekJobs.length===1?'':'s'} this week</span>`}
       <button id="next-week" title="Next week"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
     </div>
+    ${crewFilterPills(allWeekJobs)}
     ${groupsHtml}
     <button class="fab" id="new-job-fab">${iconSvg('plus', 18)} New job</button>
   `;
 }
 function attachOfficeScheduleHandlers() {
   attachOfficeCommonHandlers();
+  attachCrewFilterHandlers();
   document.getElementById('prev-week')?.addEventListener('click', () => { officeUi.scheduleWeekOffset--; render(); });
   document.getElementById('next-week')?.addEventListener('click', () => { officeUi.scheduleWeekOffset++; render(); });
   document.getElementById('this-week-link')?.addEventListener('click', () => { officeUi.scheduleWeekOffset = 0; render(); });
@@ -1286,7 +1372,7 @@ function officePropertiesScreen() {
   const rows = props.map(p => {
     const lastDays = p.lastDone ? daysBetween(today, p.lastDone) : null;
     const bucket = ageBucket(lastDays, p.type);
-    const lastPhoto = (p.lastDoneJob?.Attachments || [])[0];
+    const lastPhoto = firstRenderableAttachment(p.lastDoneJob);
     const nextText = p.nextPending ? shortDate(p.nextPending) : '—';
     return `
       <button class="prop-row" data-property="${escAttr(p.id)}">
@@ -1380,7 +1466,7 @@ function propertyDetailScreen(propId) {
       ${done.slice(0, 12).map(j => {
         const d = effectiveDate(j);
         const u = state.jobUpdates[j.JobID] || {};
-        const photos = [...(j.Attachments || []), ...((u.photos || []).map(p => ({ FileName: 'crew', ServerRelativeUrl: p.dataUrl })))];
+        const photos = [...renderableServerAttachments(j), ...((u.photos || []).map(p => ({ FileName: 'crew.jpg', ServerRelativeUrl: p.dataUrl })))];
         const thumb = photos[0]?.ServerRelativeUrl;
         return `
           <button class="timeline-item" data-sheet-job="${escAttr(j.JobID)}">
@@ -1466,7 +1552,7 @@ function openOfficeJobSheet(jobId) {
   const dateStr = isoDateLocal(date);
   const contractors = uniqueContractors();
   const u_photos = u.photos || [];
-  const serverAtts = job.Attachments || [];
+  const serverAtts = renderableServerAttachments(job);
 
   const photoSection = (u_photos.length + serverAtts.length) ? `
     <div class="field">
@@ -1685,8 +1771,9 @@ function recentActivityEvents(daysBack) {
     else if (j.Status === 'Done') {
       const d = effectiveDate(j);
       if (d >= cutoff && d <= today) {
-        const photoUrl = j.Attachments?.[0]?.ServerRelativeUrl;
-        events.push({ kind: 'done', at: d, contractor, property, verb: 'finished', timeText: shortDate(d), photoCount: (j.Attachments || []).length, photoUrl, jobId: j.JobID });
+        const renderable = renderableServerAttachments(j);
+        const photoUrl = renderable[0]?.ServerRelativeUrl;
+        events.push({ kind: 'done', at: d, contractor, property, verb: 'finished', timeText: shortDate(d), photoCount: renderable.length, photoUrl, jobId: j.JobID });
       }
     }
   }
@@ -1720,7 +1807,7 @@ function recentPhotos(daysBack) {
     const u = state.jobUpdates[j.JobID];
     // Server attachments
     for (const a of (j.Attachments || [])) {
-      if (/\.(jpe?g|png|webp|heic)$/i.test(a.FileName)) {
+      if (isRenderablePhoto(a.FileName)) {
         const visitDate = u?.finishedAt ? new Date(u.finishedAt) : date;
         if (visitDate >= cutoff && visitDate <= addDays(today, 1)) {
           out.push({ url: a.ServerRelativeUrl, propertyName: j.PropertyNickname || '?', when: visitDate, whenLabel: relativeWhen(visitDate), jobId: j.JobID });
@@ -1783,7 +1870,7 @@ function lastVisitFor(job) {
     });
   if (!sameProp.length) return null;
   const lv = sameProp[0];
-  const photo = (lv.Attachments || [])[0];
+  const photo = firstRenderableAttachment(lv);
   const lvDate = state.jobUpdates[lv.JobID]?.finishedAt || lv.ScheduledDate;
   return { date: lvDate, photoUrl: photo ? photo.ServerRelativeUrl : null, daysAgo: Math.max(0, daysBetween(today, parseDate(lvDate))) };
 }
@@ -1828,6 +1915,13 @@ function fileToResizedDataUrl(file, maxDim = 1280) {
 function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function escAttr(s) { return String(s ?? '').replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
 
+// Browsers (Chrome/Edge/Firefox) can't render HEIC. Filter to what'll actually show.
+function isRenderablePhoto(filename) { return /\.(jpe?g|png|webp|gif)$/i.test(filename || ''); }
+function renderableServerAttachments(job) {
+  return (job?.Attachments || []).filter(a => isRenderablePhoto(a.FileName));
+}
+function firstRenderableAttachment(job) { return renderableServerAttachments(job)[0] || null; }
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
@@ -1843,7 +1937,7 @@ function closeLightbox() {
   document.getElementById('lightbox-img').src = '';
 }
 function resetDemo() {
-  if (!confirm('Wipe local demo data? You\'ll be signed out and any photos/notes/schedule edits on this device will be cleared.')) return;
+  if (!confirm('Sign out and clear this device? Your unsent photos, notes, and status changes will be wiped. Anything you already sent to the office is safe.')) return;
   localStorage.removeItem(STATE_KEY);
   state = loadState();
   location.hash = '/';

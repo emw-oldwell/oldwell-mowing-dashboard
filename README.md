@@ -1,8 +1,18 @@
-# Old Well Mowing Dashboard
+# Old Well Mowing
 
-Live mowing dashboard for the Old Well team. Schedule data auto-syncs every 15 minutes from SharePoint.
+Schedule, crew, and photo tracking for Old Well's mowing operation. Auto-syncs every 15 minutes from SharePoint.
 
-🔗 **Live URL:** https://emw-oldwell.github.io/oldwell-mowing-dashboard/
+🔗 **Dashboard (read-only overview):** https://emw-oldwell.github.io/oldwell-mowing-dashboard/
+📱 **Crew + Office app:** https://emw-oldwell.github.io/oldwell-mowing-dashboard/app/ — install to phone via "Add to Home Screen"
+
+## Two surfaces
+
+- **Dashboard (`index.html`)** — wall-mounted / desktop overview. KPIs, past-due, calendar, properties, photo wall. Read-only.
+- **App (`app/index.html`)** — mobile-first. Crew signs in to see their day, mark on-way / start / finish, attach photos, leave notes. Office signs in to see live status across all crews, reschedule/reassign, manage properties.
+
+## Crew → Office update flow
+
+The app saves edits on each device. Tapping **Notify office** (or finishing a job) opens the phone's mail app with a prefilled summary addressed to `mow@oldwellco.com` — the shared inbox the office already monitors. Multi-device write-back to SharePoint is the next milestone (see *Roadmap* below).
 
 ## Architecture
 

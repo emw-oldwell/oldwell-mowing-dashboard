@@ -1,0 +1,15 @@
+{
+  "name": "Old Well Mowing",
+  "short_name": "Old Well",
+  "description": "Crew + office tool for mowing schedule, photos, and job updates.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#faf8f2",
+  "theme_color": "#1b4332",
+  "icons": [
+    { "src": "icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
