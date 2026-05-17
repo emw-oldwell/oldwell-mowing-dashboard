@@ -207,6 +207,21 @@ def discover_existing_photos_for_job(job_id: str) -> list[dict]:
     return out
 
 
+def normalize_iso(s: str | None) -> str | None:
+    """Normalize an ISO timestamp for equality comparison between app overlays
+    and SharePoint values. The app emits e.g. "2026-05-01T16:00:00.000Z" but
+    SharePoint stores it as "2026-05-01T16:00:00Z" (no millis). Without this,
+    push compare misfires every sync — re-pushes the same value, no-op writes
+    forever."""
+    if not s:
+        return s
+    try:
+        dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
+        return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    except (ValueError, AttributeError):
+        return s
+
+
 def read_events_json() -> dict[str, Any]:
     if not EVENTS_FILE.exists():
         return {"events": {}, "customJobs": [], "tombstones": {}, "crews": [], "properties": []}
@@ -292,9 +307,9 @@ def push_overlays_to_sharepoint(
         # Status: only push Done (intermediate/cancelled stay app-only in v1)
         if (overlay.get("status") == "Done" or overlay.get("finishedAt")) and sp_fields.get("Status") != "Done":
             to_update["Status"] = "Done"
-        # ScheduledDate
+        # ScheduledDate — compare normalized (SP strips millis on storage)
         new_date = overlay.get("rescheduledTo")
-        if new_date and sp_fields.get("ScheduledDate") != new_date:
+        if new_date and normalize_iso(sp_fields.get("ScheduledDate")) != normalize_iso(new_date):
             to_update["ScheduledDate"] = new_date
         # ContractorName
         new_contractor = overlay.get("reassignedTo")
