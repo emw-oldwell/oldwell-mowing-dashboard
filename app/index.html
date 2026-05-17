@@ -165,6 +165,53 @@ img { display: block; }
 }
 .switcher-add-crew:active { background: var(--green-pale); border-color: var(--green); }
 
+/* Messages pill + message list */
+.msg-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin: 4px 16px 16px;
+  padding: 9px 14px 9px 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 14px; font-weight: 600; color: var(--text-soft);
+  text-decoration: none;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.msg-pill:active { background: var(--surface-2); }
+.msg-pill.unread {
+  background: var(--green-pale); border-color: var(--green-soft); color: var(--green-deep);
+}
+.msg-pill .msg-icon { font-size: 16px; line-height: 1; }
+.msg-pill .msg-badge {
+  background: var(--green); color: #fff;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 22px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.msg-list { padding: 0 16px; display: flex; flex-direction: column; gap: 8px; }
+.msg-item {
+  position: relative;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 14px 16px;
+  text-align: left; width: 100%;
+  transition: transform .12s, border-color .15s;
+}
+.msg-item:active { transform: scale(.99); border-color: var(--border-strong); }
+.msg-item.unread {
+  border-left: 3px solid var(--green); padding-left: 13px;
+  background: var(--green-pale);
+}
+.msg-item .msg-meta { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; font-size: 12px; color: var(--text-muted); }
+.msg-item .msg-author { font-weight: 600; color: var(--text); }
+.msg-item .msg-time { font-variant-numeric: tabular-nums; }
+.msg-item .msg-property { font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 4px; }
+.msg-item .msg-text { font-size: 14px; line-height: 1.5; color: var(--text-soft); white-space: pre-wrap; word-break: break-word; }
+.msg-item .msg-dot { position: absolute; top: 14px; right: 14px; width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+
 /* Crew contact chips in the office job sheet */
 .crew-contact-row {
   display: flex; gap: 8px; flex-wrap: wrap;
@@ -1083,7 +1130,8 @@ function render() {
   if (!state.signedInAs) { app.innerHTML = signInScreen(); attachSignInHandlers(); attachScrollHandler(); window.scrollTo(0,0); return; }
   const isOffice = state.signedInAs === 'OFFICE_ALL';
   const route = parseRoute();
-  if (isOffice) {
+  if (route.name === 'messages') { app.innerHTML = messagesScreen(); attachMessagesHandlers(); }
+  else if (isOffice) {
     if (route.name === 'property') { app.innerHTML = propertyDetailScreen(route.id); attachPropertyDetailHandlers(route.id); }
     else if (route.name === 'schedule') { app.innerHTML = officeShell('schedule', officeScheduleScreen()); attachOfficeScheduleHandlers(); }
     else if (route.name === 'properties') { app.innerHTML = officeShell('properties', officePropertiesScreen()); attachOfficePropertiesHandlers(); }
@@ -1102,6 +1150,7 @@ function parseRoute() {
   const h = location.hash.replace(/^#\/?/, '');
   if (h.startsWith('job/')) return { name: 'job', id: decodeURIComponent(h.substring(4)) };
   if (h.startsWith('property/')) return { name: 'property', id: decodeURIComponent(h.substring(9)) };
+  if (h === 'messages') return { name: 'messages' };
   if (h === 'schedule' || h === 'properties' || h === 'photos' || h === 'today') return { name: h };
   return { name: 'day' };
 }
@@ -1226,6 +1275,7 @@ function dayScreen() {
       <h2>${greetingFor(state.signedInAs)}</h2>
       <div class="subtitle">${dayHeaderSubtitle(todayJobs, completedToday, thisWeek)}</div>
     </div>
+    ${messagesPill()}
     <div style="padding-bottom: max(40px, env(safe-area-inset-bottom));">${body}</div>
   `;
 }
@@ -1332,6 +1382,10 @@ function jobScreen(jobId) {
         <div class="by">${esc(effectiveContractor(job) || '')}</div>
         ${liveStatus ? `<div class="live-status">${liveStatus}</div>` : ''}
       </div>
+      ${u.officeNote ? `<div class="panel" style="border-left: 3px solid var(--green);">
+        <h3>From the office</h3>
+        <div style="font-size: 15px; line-height: 1.5; color: var(--text); white-space: pre-wrap; word-break: break-word;">${esc(u.officeNote)}</div>
+      </div>` : ''}
       <div class="panel">${lastBlock}</div>
       <div class="panel">
         <h3>Photos this visit · ${photos.length}</h3>
@@ -1367,6 +1421,13 @@ function renderActions(job, status) {
 function attachJobHandlers(jobId) {
   const back = document.getElementById('back-btn');
   if (back) back.addEventListener('click', () => go('/'));
+  // Mark any unread office note on this job as read for the current crew.
+  const u = state.jobUpdates?.[jobId];
+  if (u?.officeNote && state.signedInAs && state.signedInAs !== 'OFFICE_ALL') {
+    const readMap = u.officeNoteReadBy || {};
+    const readAt = readMap[state.signedInAs];
+    if (!readAt || readAt < (u.lastUpdate || '')) markMessageRead(jobId);
+  }
   const notes = document.getElementById('notes-input');
   if (notes) {
     let saveTimer;
@@ -1849,6 +1910,76 @@ async function doAddPropertyRetry(propId, nick, typeId, contractor, startStr, jo
   }
 }
 
+/* ===== Messages screen ===== */
+function messagesScreen() {
+  const msgs = messagesForUser();
+  const isOffice = state.signedInAs === 'OFFICE_ALL';
+  const total = msgs.length;
+  const unread = msgs.filter(m => m.isUnread).length;
+  const subtitle = total === 0
+    ? (isOffice ? 'Crew notes from the field will show up here.' : 'Notes from the office will show up here.')
+    : `${total} message${total === 1 ? '' : 's'}${unread ? ` · ${unread} unread` : ''}`;
+
+  const list = total === 0 ? `
+    <div class="center-state" style="min-height: 50dvh;">
+      <div class="glyph">${iconSvg('leaf', 28)}</div>
+      <h3>No messages yet</h3>
+      <p>${esc(subtitle)}</p>
+    </div>
+  ` : `
+    <div class="msg-list">
+      ${msgs.map(m => `
+        <button class="msg-item${m.isUnread ? ' unread' : ''}" data-msg-job="${escAttr(m.jobId)}">
+          ${m.isUnread ? '<span class="msg-dot"></span>' : ''}
+          <div class="msg-meta">
+            <span class="msg-author">${esc(m.author)}</span>
+            <span class="msg-time">${esc(timeAgo(m.when))}</span>
+          </div>
+          <div class="msg-property">${esc(m.job.PropertyNickname || '?')}</div>
+          <div class="msg-text">${esc(m.note)}</div>
+        </button>
+      `).join('')}
+    </div>
+  `;
+
+  return `
+    <header class="topbar" id="topbar">
+      <button class="icon-btn" id="back-btn">${iconSvg('back', 22)}</button>
+      <h1>Messages</h1>
+      <span class="sync-pill" id="sync-pill">…</span>
+    </header>
+    <div class="day-header fade-in" style="padding-top: 8px;">
+      <div class="date">${esc(isOffice ? 'From the field' : 'From the office')}</div>
+      <h2>${total === 0 ? 'All clear' : (unread ? `${unread} unread` : 'Caught up')}</h2>
+      ${total > 0 ? `<div class="subtitle">${esc(subtitle)}</div>` : ''}
+    </div>
+    <div class="page">${list}</div>
+  `;
+}
+
+function attachMessagesHandlers() {
+  document.getElementById('back-btn')?.addEventListener('click', () => {
+    if (history.length > 1) history.back();
+    else { location.hash = state.signedInAs === 'OFFICE_ALL' ? '/today' : '/'; }
+  });
+  document.querySelectorAll('[data-msg-job]').forEach(el => {
+    el.addEventListener('click', () => {
+      const jobId = el.dataset.msgJob;
+      markMessageRead(jobId);
+      if (state.signedInAs === 'OFFICE_ALL') {
+        // Office: stay on messages, overlay the office job sheet
+        openOfficeJobSheet(jobId);
+        // Update the item's read state immediately
+        el.classList.remove('unread');
+        const dot = el.querySelector('.msg-dot');
+        if (dot) dot.remove();
+      } else {
+        location.hash = '/job/' + encodeURIComponent(jobId);
+      }
+    });
+  });
+}
+
 function openSwitcherSheet() {
   const contractors = uniqueContractors();
   const cur = state.signedInAs;
@@ -2132,6 +2263,7 @@ function officeTodayScreen() {
       <h2>Good ${greetingTime()}, Office</h2>
       <div class="subtitle">${officeSubtitle(activeToday, doneToday, weekJobs)}</div>
     </div>
+    ${messagesPill()}
     <div class="kpi-strip">
       <div class="kpi-card green"><div class="num">${donePast7.length}</div><div class="label">Done · past 7d</div></div>
       <div class="kpi-card red"><div class="num">${lateNotDone.length}</div><div class="label">Past due</div></div>
@@ -2502,6 +2634,11 @@ function openOfficeJobSheet(jobId) {
   const job = allJobs().find(j => j.JobID === jobId);
   if (!job) return;
   const u = jobUpdate(jobId);
+  // Mark any unread crew note as read when office opens the sheet.
+  if (u?.notes && state.signedInAs === 'OFFICE_ALL') {
+    const readAt = u.notesReadByOffice;
+    if (!readAt || readAt < (u.lastUpdate || '')) markMessageRead(jobId);
+  }
   const status = effectiveStatus(job);
   const date = effectiveDate(job);
   const dateStr = isoDateLocal(date);
@@ -2821,6 +2958,74 @@ function findCrew(name) {
   if (!name) return null;
   return (state?.crews || []).find(c => c.name === name) || null;
 }
+/* ===== Messages: crew notes ↔ office notes with unread tracking =====
+ * Office sees crew notes left on any job. Crew sees office notes on jobs
+ * assigned to them. Read state lives on the overlay so it syncs across
+ * devices: notesReadByOffice (ISO timestamp), officeNoteReadBy[crewName] (ISO).
+ */
+function messagesForUser() {
+  const isOffice = state.signedInAs === 'OFFICE_ALL';
+  const jobsById = {};
+  for (const j of allJobs()) if (j.JobID) jobsById[j.JobID] = j;
+  const out = [];
+  for (const [jobId, u] of Object.entries(state.jobUpdates || {})) {
+    if (!u || u.cancelled) continue;
+    const job = jobsById[jobId];
+    if (!job) continue;
+    if (isOffice) {
+      const note = (u.notes || '').trim();
+      if (!note) continue;
+      const readAt = u.notesReadByOffice;
+      const lastUpdate = u.lastUpdate || '';
+      out.push({
+        jobId, note,
+        author: u.updatedBy && u.updatedBy !== 'OFFICE_ALL' ? u.updatedBy : effectiveContractor(job) || 'A crew',
+        when: lastUpdate,
+        isUnread: !readAt || readAt < lastUpdate,
+        job,
+      });
+    } else {
+      if (effectiveContractor(job) !== state.signedInAs) continue;
+      const note = (u.officeNote || '').trim();
+      if (!note) continue;
+      const readMap = u.officeNoteReadBy || {};
+      const readAt = readMap[state.signedInAs];
+      const lastUpdate = u.lastUpdate || '';
+      out.push({
+        jobId, note, author: 'Office',
+        when: lastUpdate,
+        isUnread: !readAt || readAt < lastUpdate,
+        job,
+      });
+    }
+  }
+  out.sort((a, b) => (b.when || '').localeCompare(a.when || ''));
+  return out;
+}
+function unreadMessageCount() { return messagesForUser().filter(m => m.isUnread).length; }
+function markMessageRead(jobId) {
+  if (!state.jobUpdates?.[jobId]) return;
+  const u = jobUpdate(jobId);
+  const now = new Date().toISOString();
+  if (state.signedInAs === 'OFFICE_ALL') {
+    u.notesReadByOffice = now;
+  } else {
+    if (!u.officeNoteReadBy) u.officeNoteReadBy = {};
+    u.officeNoteReadBy[state.signedInAs] = now;
+  }
+  saveJob(jobId);
+}
+function messagesPill() {
+  const count = unreadMessageCount();
+  return `
+    <a class="msg-pill${count > 0 ? ' unread' : ''}" href="#messages">
+      <span class="msg-icon">✉</span>
+      <span>Messages</span>
+      ${count > 0 ? `<span class="msg-badge">${count}</span>` : ''}
+    </a>
+  `;
+}
+
 function crewContactButtons(name) {
   const crew = findCrew(name);
   if (!crew) return '';
