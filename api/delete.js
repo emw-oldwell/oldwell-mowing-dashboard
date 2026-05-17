@@ -7,6 +7,7 @@ const { getFile, putFile, deleteFile, setCors, assertConfigured } = require('./_
 
 const MAX_RETRIES = 5;
 const EVENTS_PATH = 'events.json';
+const TOMBSTONE_TTL_DAYS = 90;
 
 module.exports = async function handler(req, res) {
   setCors(res);
@@ -51,6 +52,7 @@ module.exports = async function handler(req, res) {
     jobId,
     wasPresent: tombstoneResult.wasPresent,
     tombstoneAt: tombstoneResult.tombstoneAt,
+    tombstonesPruned: tombstoneResult.tombstonesPruned,
     photosDeleted,
     photosFailed,
   });
@@ -75,11 +77,26 @@ async function applyTombstone(jobId) {
   state.customJobs = state.customJobs.filter(j => j.JobID !== jobId);
   const now = new Date().toISOString();
   state.tombstones[jobId] = now;
+
+  // Opportunistic TTL prune: drop tombstones older than 90 days.
+  // Runs on every delete call so events.json stays small without a cron.
+  // Safe because by then every client device has long since pulled the
+  // tombstone and pruned its own localStorage.
+  const cutoff = new Date(Date.now() - TOMBSTONE_TTL_DAYS * 86400000).toISOString();
+  const tombstonesPruned = [];
+  for (const [id, at] of Object.entries(state.tombstones)) {
+    if (at < cutoff) {
+      delete state.tombstones[id];
+      tombstonesPruned.push(id);
+    }
+  }
+
   state.updatedAt = now;
 
   const buf = Buffer.from(JSON.stringify(state, null, 0));
-  await putFile(EVENTS_PATH, buf, `app: delete ${jobId}`, file.sha);
-  return { wasPresent, tombstoneAt: now, photoPaths };
+  const pruneNote = tombstonesPruned.length ? ` (+pruned ${tombstonesPruned.length})` : '';
+  await putFile(EVENTS_PATH, buf, `app: delete ${jobId}${pruneNote}`, file.sha);
+  return { wasPresent, tombstoneAt: now, photoPaths, tombstonesPruned };
 }
 
 function extractRepoPath(url) {
