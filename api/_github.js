@@ -42,6 +42,32 @@ async function putFile(path, contentBuffer, message, sha) {
   return r.json();
 }
 
+// Best-effort delete. Returns {deleted: true} on success, {skipped: 'not found'} for 404.
+async function deleteFile(path, message) {
+  const encoded = path.split('/').map(encodeURIComponent).join('/');
+  const head = await fetch(`https://api.github.com/repos/${REPO}/contents/${encoded}?ref=${BRANCH}`, { headers: ghHeaders() });
+  if (head.status === 404) return { skipped: 'not found' };
+  if (!head.ok) throw new Error(`GET ${path}: ${head.status}`);
+  const { sha } = await head.json();
+  const r = await fetch(`https://api.github.com/repos/${REPO}/contents/${encoded}`, {
+    method: 'DELETE',
+    headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message,
+      branch: BRANCH,
+      sha,
+      committer: { name: 'mowing-app-bot', email: 'app-bot@oldwellco.com' },
+      author: { name: 'mowing-app-bot', email: 'app-bot@oldwellco.com' },
+    }),
+  });
+  if (!r.ok) {
+    const err = new Error(`DELETE ${path}: ${r.status} ${await r.text()}`);
+    err.status = r.status;
+    throw err;
+  }
+  return { deleted: true };
+}
+
 function setCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -57,4 +83,4 @@ function assertConfigured(res) {
   return true;
 }
 
-module.exports = { getFile, putFile, setCors, assertConfigured, REPO, BRANCH };
+module.exports = { getFile, putFile, deleteFile, setCors, assertConfigured, REPO, BRANCH };

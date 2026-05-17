@@ -755,17 +755,33 @@ async function pullRemoteEvents() {
 function mergeRemote(remote) {
   if (!remote || typeof remote !== 'object') return;
   let changed = false;
+  // 1) Apply tombstones first. If server says jobId is deleted AND local hasn't
+  // edited it since the tombstone, drop the local copy.
+  const tombs = remote.tombstones || {};
+  for (const [jobId, deletedAt] of Object.entries(tombs)) {
+    const local = state.jobUpdates[jobId];
+    if (local && (local.lastUpdate || '') <= deletedAt) {
+      delete state.jobUpdates[jobId];
+      changed = true;
+    }
+    // Same logic for custom jobs (office-created)
+    const before = state.customJobs.length;
+    state.customJobs = state.customJobs.filter(j => j.JobID !== jobId);
+    if (state.customJobs.length !== before) changed = true;
+  }
+  // 2) Apply remote events. Server wins on timestamp tie (server is canonical).
   for (const [jobId, server] of Object.entries(remote.events || {})) {
     const local = state.jobUpdates[jobId];
     const localTime = local?.lastUpdate || '';
     const serverTime = server?.lastUpdate || '';
-    // Server wins when its timestamp is newer OR equal (server is canonical for ties)
     if (!local || serverTime >= localTime) {
       state.jobUpdates[jobId] = { ...server };
       changed = true;
     }
   }
+  // 3) Pull in any new custom jobs from the server
   for (const job of (remote.customJobs || [])) {
+    if (tombs[job.JobID]) continue; // skip tombstoned
     if (!state.customJobs.find(j => j.JobID === job.JobID)) {
       state.customJobs.push(job);
       changed = true;
@@ -814,6 +830,31 @@ async function doPushEvent(jobId, customJob) {
     showToast('Saved on phone — sync will retry');
     // Retry on next poll cycle by re-queueing
     setTimeout(() => pushEvent(jobId, customJob), 15000);
+  }
+}
+
+async function deleteEntry(jobId) {
+  // Optimistic local delete: drop overlay + any custom-job entry immediately.
+  delete state.jobUpdates[jobId];
+  state.customJobs = (state.customJobs || []).filter(j => j.JobID !== jobId);
+  saveState();
+  if (typeof render === 'function') render();
+  if (!SYNC_BASE) return true;
+  try {
+    const r = await fetch(SYNC_BASE + '/api/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId, deletePhotos: true }),
+    });
+    if (!r.ok) throw new Error('delete ' + r.status);
+    syncState.lastPushAt = Date.now();
+    updateSyncIndicator();
+    showToast('Entry deleted');
+    return true;
+  } catch (e) {
+    console.warn('delete failed', e);
+    showToast('Delete failed — try again');
+    return false;
   }
 }
 
@@ -1901,8 +1942,9 @@ function openOfficeJobSheet(jobId) {
     <div style="margin-top: 8px;">
       <button class="btn ghost" onclick="closeSheet()" style="width: 100%;">Cancel & close</button>
     </div>
-    <div style="margin-top: 24px; text-align: center;">
+    <div style="margin-top: 24px; text-align: center; display: flex; flex-direction: column; gap: 6px;">
       <button class="btn small ghost" onclick="goPropertyFromSheet('${escAttr(job.PropertyID || job.PropertyNickname)}')">Open ${esc(job.PropertyNickname)} →</button>
+      ${u.lastUpdate ? `<button class="btn small ghost" data-sheet-act="deleteentry" style="color: var(--red);">Delete this entry</button>` : ''}
     </div>
   `;
   showSheet(body, () => {
@@ -1940,6 +1982,11 @@ function openOfficeJobSheet(jobId) {
           u.cancelled = true; saveJob(jobId); showToast('Cancelled'); closeSheet(); render();
         }
         else if (act === 'restore') { delete u.cancelled; saveJob(jobId); showToast('Restored'); closeSheet(); render(); }
+        else if (act === 'deleteentry') {
+          if (!confirm('Delete this entry?\n\nRemoves start/finish, photos, notes, and any schedule changes for this job — on every device, including the cloud. The job itself stays on the schedule.\n\nThis cannot be undone.')) return;
+          closeSheet();
+          deleteEntry(jobId);
+        }
       });
     });
   });

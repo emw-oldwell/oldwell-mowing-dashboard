@@ -40,22 +40,27 @@ module.exports = async function handler(req, res) {
 
 async function applyEvent(jobId, incoming, customJob) {
   const file = await getFile(EVENTS_PATH);
-  let state = { updatedAt: null, events: {}, customJobs: [] };
+  let state = { updatedAt: null, events: {}, customJobs: [], tombstones: {} };
   if (file.content) {
     try { state = JSON.parse(file.content); } catch { /* corrupt → overwrite */ }
     if (!state.events) state.events = {};
     if (!state.customJobs) state.customJobs = [];
+    if (!state.tombstones) state.tombstones = {};
   }
 
   const now = new Date().toISOString();
   const incomingTime = incoming.lastUpdate || now;
-  const existing = state.events[jobId];
-  const isNewer = !existing || (existing.lastUpdate || '') <= incomingTime;
-  if (isNewer) {
-    state.events[jobId] = { ...incoming, lastUpdate: incomingTime };
-  } else {
-    return { ok: true, skipped: 'older than current overlay', currentLastUpdate: existing.lastUpdate };
+  const existingTime = state.events[jobId]?.lastUpdate || '';
+  const tombstoneTime = state.tombstones[jobId] || '';
+  // Accept incoming only if newer than BOTH the current overlay AND any tombstone.
+  // (Tombstone gates "deleted, then a slow phone tries to push older state".)
+  const blocker = existingTime > tombstoneTime ? existingTime : tombstoneTime;
+  if (incomingTime <= blocker) {
+    return { ok: true, skipped: 'older than current state', existing: existingTime, tombstone: tombstoneTime };
   }
+  state.events[jobId] = { ...incoming, lastUpdate: incomingTime };
+  // Incoming wins → if a tombstone existed it's now stale (resurrected). Drop it.
+  if (state.tombstones[jobId]) delete state.tombstones[jobId];
 
   if (customJob && customJob.JobID && !state.customJobs.find(j => j.JobID === customJob.JobID)) {
     state.customJobs.push(customJob);
