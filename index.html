@@ -151,7 +151,7 @@ tr:hover td { background: #fdfcf7; }
   </div>
 
   <div class="banner" id="status-banner">
-    <strong>Live data:</strong> Schedule snapshot refreshes every 15 min from SharePoint. Photos load from SharePoint — sign in to <code>oldwellco.sharepoint.com</code> once and they'll show here.
+    <strong>Live data:</strong> Schedule auto-syncs from SharePoint every 15 min; crew + office updates from the <a href="./app/">app</a> land within ~30 sec. Photos served from this repo — no sign-in needed.
   </div>
 
   <div class="kpi-row">
@@ -181,12 +181,12 @@ tr:hover td { background: #fdfcf7; }
   </div>
 
   <div class="section photos">
-    <div class="section-head"><span class="pip"></span><h2>📸 Photo Wall — most recent per property</h2><a class="link" href="https://oldwellco.sharepoint.com/sites/Mowing/Lists/Schedule" target="_blank">View all photos →</a></div>
+    <div class="section-head"><span class="pip"></span><h2>📸 Photo Wall — most recent per property</h2><a class="link" href="./app/#photos">All photos in app →</a></div>
     <div id="photos-body"><div class="empty-state">Loading…</div></div>
   </div>
 
   <div class="foot">
-    <strong>How this works:</strong> A Power Automate flow exports the SharePoint Schedule list to <code>data.json</code> every 15 min. This page reads that JSON on every reload. Photos still live in SharePoint — sign in to <a href="https://oldwellco.sharepoint.com/sites/Mowing" target="_blank">the Mowing site</a> once per session and they'll render here automatically.
+    <strong>How this works:</strong> A GitHub Action pulls the SharePoint Schedule list into <code>data.json</code> every 15 min. The <a href="./app/">crew + office app</a> commits live overlays (mark-done, photos, notes, reschedules, app-added properties) to <code>events.json</code> via a Vercel function. This page reads both on every reload and merges them. Photos live in <code>/photos/</code> in this repo — no SharePoint sign-in required.
   </div>
 </div>
 
@@ -208,10 +208,54 @@ function escapeAttr(s) { return String(s ?? '').replace(/'/g, '&#39;').replace(/
 function daysBetween(a, b) { return Math.floor((a - b) / 86400000); }
 
 async function fetchData() {
-  // Cache-bust to ensure fresh JSON every reload
   const r = await fetch('./data.json?t=' + Date.now(), { cache: 'no-store' });
   if (!r.ok) throw new Error('data.json fetch failed: ' + r.status);
   return await r.json();
+}
+
+// events.json carries app overlays (mark-done, photos, notes, reschedules,
+// reassigns, custom jobs added in-app, tombstones for deletions). It may not
+// exist yet on a fresh deploy — that's a 404, treated as empty.
+async function fetchEvents() {
+  const r = await fetch('./events.json?t=' + Date.now(), { cache: 'no-store' });
+  if (r.status === 404) return { events: {}, customJobs: [], tombstones: {}, crews: [], properties: [] };
+  if (!r.ok) throw new Error('events.json fetch failed: ' + r.status);
+  return await r.json();
+}
+
+// Apply a per-job overlay to a base job from data.json, returning the merged view.
+function applyOverlay(job, ov) {
+  const out = { ...job };
+  if (!ov) return out;
+  if (ov.rescheduledTo) out.ScheduledDate = ov.rescheduledTo;
+  if (ov.reassignedTo) out.ContractorName = ov.reassignedTo;
+  if (ov.typeOverride) out.TypeID = ov.typeOverride;
+  if (ov.status === 'Done' || ov.finishedAt) out.Status = 'Done';
+  // Append crew-uploaded photos as additional Attachments so the dashboard's
+  // photo wall + thumbnails see them alongside Power Automate / manual ones.
+  if (ov.photos && ov.photos.length) {
+    const crewAtts = ov.photos
+      .filter(p => p.url)
+      .map(p => ({ FileName: p.url.split('/').pop() || 'crew.jpg', ServerRelativeUrl: p.url }));
+    if (crewAtts.length) out.Attachments = [...(out.Attachments || []), ...crewAtts];
+  }
+  return out;
+}
+
+// Merge schedule + overlays + custom jobs, minus tombstones + cancelled.
+function mergeForDashboard(data, events) {
+  const eventsMap = events?.events || {};
+  const tombstones = events?.tombstones || {};
+  const customJobs = events?.customJobs || [];
+  const all = [...(data.jobs || []), ...customJobs];
+  const out = [];
+  for (const job of all) {
+    if (!job.JobID || tombstones[job.JobID]) continue;
+    const ov = eventsMap[job.JobID];
+    if (ov?.cancelled) continue;
+    out.push(applyOverlay(job, ov));
+  }
+  return out;
 }
 
 // Tolerance window: a Pending mow is treated as "on time" if today is within
@@ -277,9 +321,9 @@ function ageChip(days, type) {
 function getPhotoUrl(job) {
   const atts = job?.Attachments || [];
   if (atts.length === 0) return null;
-  const img = atts.find(a => /\.(jpe?g|png|gif|webp|heic)$/i.test(a.FileName));
+  // HEIC excluded — Chrome/Edge/Firefox can't render it.
+  const img = atts.find(a => /\.(jpe?g|png|gif|webp)$/i.test(a.FileName));
   if (!img) return null;
-  // SharePoint URLs are relative; prepend SP_BASE for cross-origin loading
   return img.ServerRelativeUrl.startsWith('http') ? img.ServerRelativeUrl : SP_BASE + img.ServerRelativeUrl;
 }
 
@@ -438,22 +482,32 @@ async function loadDashboard() {
   const stamp = document.getElementById('last-refresh');
   const banner = document.getElementById('status-banner');
   banner.className = 'banner';
-  banner.innerHTML = '<strong>Live data:</strong> Schedule auto-syncs every 15 min. If it looks stale, click <strong>⟳ Sync now</strong> to force a refresh from SharePoint.';
+  banner.innerHTML = '<strong>Live data:</strong> Schedule auto-syncs from SharePoint every 15 min; crew + office updates land within ~30 sec. Click <strong>⟳ Sync now</strong> to force a SharePoint refresh.';
   stamp.innerHTML = '<span class="spinner"></span>Loading…';
   try {
-    const data = await fetchData();
-    renderDashboard(data);
+    const [data, events] = await Promise.all([
+      fetchData(),
+      fetchEvents().catch(() => ({ events: {}, customJobs: [], tombstones: {} })),
+    ]);
+    const mergedJobs = mergeForDashboard(data, events);
+    renderDashboard({ ...data, jobs: mergedJobs });
+
     const opts = { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' };
     const updated = data.lastUpdated ? new Date(data.lastUpdated).toLocaleString('en-US', opts) : 'unknown';
     const ageMin = data.lastUpdated ? Math.round((Date.now() - new Date(data.lastUpdated).getTime()) / 60000) : null;
-    stamp.textContent = `Snapshot · updated ${updated} · ${(data.jobs||[]).length} jobs`;
+    const overlayCount = Object.keys(events?.events || {}).length;
+    const customCount = (events?.customJobs || []).length;
+    const tail = (overlayCount || customCount)
+      ? ` · ${overlayCount} overlay${overlayCount === 1 ? '' : 's'}${customCount ? ` · ${customCount} app-added` : ''}`
+      : '';
+    stamp.textContent = `Snapshot · updated ${updated} · ${mergedJobs.length} jobs${tail}`;
     if (ageMin !== null && ageMin >= 25) {
       banner.className = 'banner error';
-      banner.innerHTML = `<strong>Snapshot is ${ageMin} min old.</strong> Auto-sync may have skipped — click <strong>⟳ Sync now</strong> at top right to fetch the latest from SharePoint.`;
+      banner.innerHTML = `<strong>SharePoint snapshot is ${ageMin} min old.</strong> Auto-sync may have skipped — click <strong>⟳ Sync now</strong> at top right. (App overlays are unaffected and still current.)`;
     }
   } catch (err) {
     banner.className = 'banner error';
-    banner.innerHTML = `<strong>Couldn't load data:</strong> ${escapeHtml(err.message)}. The data.json file may not be published yet.`;
+    banner.innerHTML = `<strong>Couldn't load data:</strong> ${escapeHtml(err.message)}.`;
     stamp.textContent = 'Load failed — see message above';
   }
 }
