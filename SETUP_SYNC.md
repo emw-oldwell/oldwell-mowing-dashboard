@@ -49,16 +49,17 @@ together.
 
 ## How to verify it's working (optional)
 
-After step 3, this should return 405 (POST-only) not 500:
+After step 3, this should return JSON with `"tokenConfigured": true`:
 
-    curl -i https://YOUR-VERCEL-URL.vercel.app/api/event
+    curl https://YOUR-VERCEL-URL.vercel.app/api/health
 
-And this should return 405:
+Expected:
 
-    curl -i https://YOUR-VERCEL-URL.vercel.app/api/photo
+    {"ok":true,"service":"oldwell-mowing-api","tokenConfigured":true,...}
 
-If you see 500 with `"GITHUB_TOKEN env var not set"`, the env var didn't take
-— make sure you redeployed after adding it.
+If `tokenConfigured` is `false`, the env var didn't take — double-check you
+added it to all three environments (Production / Preview / Development)
+**and** redeployed.
 
 ## Costs
 

@@ -42,7 +42,17 @@ jobs:
           git add data.json photos/ || true
           if git diff --cached --quiet; then
             echo "No changes."
-          else
-            git commit -m "Auto-sync $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            git push
+            exit 0
           fi
+          git commit -m "Auto-sync $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          # Rebase onto any concurrent commits (e.g. events.json or new photos
+          # written by the Vercel app function) before pushing. Retry on push
+          # races. data.json/photos paths don't overlap the app's writes, so
+          # rebase should never conflict — if it does, the workflow surfaces it.
+          for attempt in 1 2 3; do
+            git pull --rebase origin main && git push && exit 0
+            echo "push attempt $attempt failed, retrying"
+            sleep 3
+          done
+          echo "ERROR: push failed after 3 attempts" >&2
+          exit 1
