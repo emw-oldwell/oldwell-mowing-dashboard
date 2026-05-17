@@ -5,7 +5,8 @@
     "api/photo.js": { "maxDuration": 30 },
     "api/health.js": { "maxDuration": 5 },
     "api/delete.js": { "maxDuration": 30 },
-    "api/crew.js": { "maxDuration": 15 }
+    "api/crew.js": { "maxDuration": 15 },
+    "api/property.js": { "maxDuration": 30 }
   },
   "headers": [
     {
