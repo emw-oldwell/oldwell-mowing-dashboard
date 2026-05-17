@@ -1560,6 +1560,115 @@ function recomputeProperty(propKey) {
   render();
 }
 
+// Look up the persisted metadata record for a property by id (or nickname fallback).
+function findProperty(propKey) {
+  if (!propKey) return null;
+  return (state?.properties || []).find(p => p.id === propKey || p.nickname === propKey) || null;
+}
+
+function openEditPropertySheet(propKey) {
+  const propJobs = activeJobs().filter(j => (j.PropertyID || j.PropertyNickname) === propKey);
+  if (!propJobs.length) { showToast('No jobs found for this property'); return; }
+  const sample = propJobs[0];
+  const propId = sample.PropertyID || propKey;
+  const nickname = sample.PropertyNickname || propKey;
+  const typeId = effectiveType(sample);
+  const currentContractor = effectiveContractor(sample);
+  const propRecord = findProperty(propId) || findProperty(nickname) || {};
+  const currentNotes = propRecord.notes || '';
+  const crews = uniqueContractors();
+
+  const body = `
+    <h2>Edit ${esc(nickname)}</h2>
+    <div class="lede">Change the default contractor (bulk-reassigns pending jobs) and notes (gate codes, sprinkler shutoffs, tenant info — visible to office).</div>
+    <div class="field">
+      <label>Type</label>
+      <input type="text" value="${escAttr(typeId)} — ${escAttr(TYPE_LABELS[typeId] || '')}" disabled style="opacity:.7;">
+    </div>
+    <div class="field">
+      <label>Default contractor</label>
+      <select id="edit-prop-contractor">
+        ${crews.map(c => `<option value="${escAttr(c)}" ${c === currentContractor ? 'selected' : ''}>${esc(c)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field">
+      <label>Notes</label>
+      <textarea id="edit-prop-notes" class="notes" placeholder="Gate code 1234. Sprinkler shutoff in the garage. Don't mow behind the shed (bee hive).">${esc(currentNotes)}</textarea>
+    </div>
+    <div class="btn-row" style="display: flex; gap: 8px;">
+      <button class="btn ghost" onclick="closeSheet()" style="flex:1;">Cancel</button>
+      <button class="btn primary" id="edit-prop-save" style="flex:1;">Save</button>
+    </div>
+  `;
+  showSheet(body, () => {
+    document.getElementById('edit-prop-save')?.addEventListener('click', () => doEditProperty(propKey, sample));
+  });
+}
+
+async function doEditProperty(propKey, sampleJob) {
+  const newContractor = document.getElementById('edit-prop-contractor').value;
+  const newNotes = document.getElementById('edit-prop-notes').value.trim();
+  const propId = sampleJob.PropertyID || propKey;
+  const nickname = sampleJob.PropertyNickname || propKey;
+  const typeId = effectiveType(sampleJob);
+  const now = new Date().toISOString();
+
+  // Upsert local property record
+  state.properties = state.properties || [];
+  const idx = state.properties.findIndex(p => p.id === propId);
+  const baseRecord = idx >= 0 ? state.properties[idx] : { id: propId, nickname, typeId, addedAt: now };
+  const updatedRecord = {
+    ...baseRecord,
+    id: propId,
+    nickname,
+    typeId,
+    contractor: newContractor,
+    notes: newNotes || undefined,
+    updatedAt: now,
+    updatedBy: state.signedInAs || 'app',
+  };
+  for (const k of Object.keys(updatedRecord)) if (updatedRecord[k] === undefined) delete updatedRecord[k];
+  if (idx >= 0) state.properties[idx] = updatedRecord;
+  else state.properties.push(updatedRecord);
+
+  // Bulk reassign every pending future job for this property
+  const today = startOfToday();
+  const pending = activeJobs().filter(j =>
+    (j.PropertyID || j.PropertyNickname) === propKey &&
+    effectiveStatus(j) === 'Pending' &&
+    effectiveDate(j) >= today
+  );
+  let reassigned = 0;
+  for (const j of pending) {
+    if (effectiveContractor(j) !== newContractor) {
+      const u = jobUpdate(j.JobID);
+      u.reassignedTo = newContractor;
+      saveJob(j.JobID);
+      reassigned++;
+    }
+  }
+  saveState();
+  closeSheet();
+  showToast(reassigned ? `Saved · ${reassigned} job${reassigned === 1 ? '' : 's'} reassigned` : 'Saved');
+  render();
+
+  // Sync the property record (metadata-only, jobs=[] — already reassigned per-job above)
+  if (!SYNC_BASE) return;
+  try {
+    const r = await fetch(SYNC_BASE + '/api/property', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ property: updatedRecord, jobs: [] }),
+    });
+    if (!r.ok) throw new Error('property update ' + r.status);
+    syncState.lastPushAt = Date.now();
+    updateSyncIndicator();
+  } catch (e) {
+    console.warn('property edit sync failed', e);
+    showToast('Saved on phone — sync will retry');
+  }
+}
+
 /* ===== Add Property — form, generator, atomic API push ===== */
 function openAddPropertySheet() {
   const crews = uniqueContractors();
@@ -2249,7 +2358,6 @@ function propertyDetailScreen(propId) {
   const upcomingBlock = upcoming.length ? `
     <div class="section-label">
       Upcoming <span class="count">· next ${Math.min(upcoming.length, 6)}</span>
-      <span class="right"><button class="btn small ghost" id="recompute-btn" style="font-size:12px; padding:4px 10px; min-height:auto;">⟳ Recompute</button></span>
     </div>
     <div class="timeline-list">
       ${upcoming.slice(0, 6).map(j => {
@@ -2292,6 +2400,14 @@ function propertyDetailScreen(propId) {
       }).join('')}
     </div>` : '';
 
+  const propRecord = findProperty(sample.PropertyID) || findProperty(nickname) || null;
+  const notes = propRecord?.notes || '';
+  const notesBlock = notes ? `
+    <div style="background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--green); border-radius: 10px; padding: 10px 14px; margin: 0 16px 12px; font-size: 13px; color: var(--text); line-height: 1.5;">
+      <div style="font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Notes</div>
+      ${esc(notes)}
+    </div>` : '';
+
   return `
     <header class="topbar" id="topbar">
       <button class="icon-btn" id="back-btn">${iconSvg('back', 22)}</button>
@@ -2305,11 +2421,17 @@ function propertyDetailScreen(propId) {
         </div>
         <div class="nick">${esc(nickname || '?')}</div>
         <div class="by">${esc(contractor || '')}</div>
+        ${crewContactButtons(contractor)}
         <div class="stats-row">
           <div class="stat-card"><div class="num ${bucket.cls === 'stale' ? 'red' : bucket.cls === 'aging' ? 'amber' : 'green'}">${esc(lastDays != null ? lastDays + 'd' : '—')}</div><div class="lbl">Since last</div></div>
           <div class="stat-card"><div class="num">${esc(nextDate ? shortDate(nextDate) : '—')}</div><div class="lbl">Next due</div></div>
           <div class="stat-card"><div class="num">${done.length}</div><div class="lbl">Mowed total</div></div>
         </div>
+      </div>
+      ${notesBlock}
+      <div style="display: flex; gap: 8px; padding: 0 16px 14px;">
+        <button class="btn small ghost" id="edit-prop-btn" style="flex:1; min-height:40px;">✎ Edit property</button>
+        <button class="btn small ghost" id="recompute-btn" style="flex:1; min-height:40px;">⟳ Recompute</button>
       </div>
       ${upcomingBlock}
       ${historyBlock}
@@ -2328,6 +2450,7 @@ function attachPropertyDetailHandlers(propId) {
     if (!confirm("Recompute this property's schedule?\n\nShifts every upcoming pending mow forward, anchored to TODAY + the cadence rules. Useful after un-cancellations, reopened jobs, or manual reschedules that drifted out of step.\n\nCatch-up (past-due) jobs are left alone. Cancel individual mows manually if you don't want them recomputed.")) return;
     recomputeProperty(propId);
   });
+  document.getElementById('edit-prop-btn')?.addEventListener('click', () => openEditPropertySheet(propId));
 }
 
 /* ===== Office: Photos ===== */

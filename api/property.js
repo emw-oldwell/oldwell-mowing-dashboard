@@ -22,10 +22,7 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'property object required' });
   }
   if (!Array.isArray(jobs)) {
-    return res.status(400).json({ error: 'jobs array required' });
-  }
-  if (jobs.length === 0) {
-    return res.status(400).json({ error: 'at least one job required' });
+    return res.status(400).json({ error: 'jobs array required (use [] for metadata-only updates)' });
   }
   if (jobs.length > MAX_JOBS_PER_PROPERTY) {
     return res.status(413).json({ error: `too many jobs (${jobs.length} > ${MAX_JOBS_PER_PROPERTY})` });
@@ -80,6 +77,7 @@ async function applyProperty(propertyRaw, jobs, parsed) {
     nickname: parsed.nickname,
     typeId: parsed.typeId,
     contractor: String(propertyRaw.contractor || '').trim() || undefined,
+    notes: String(propertyRaw.notes || '').trim() || undefined,
     seasonStart: String(propertyRaw.seasonStart || '').slice(0, 10) || undefined,
     addedBy: String(propertyRaw.addedBy || '').trim() || undefined,
     addedAt: now,
@@ -90,7 +88,7 @@ async function applyProperty(propertyRaw, jobs, parsed) {
   const existingIdx = state.properties.findIndex(p => p.id === cleanProperty.id);
   if (existingIdx >= 0) {
     const prev = state.properties[existingIdx];
-    state.properties[existingIdx] = { ...prev, ...cleanProperty, addedAt: prev.addedAt || now };
+    state.properties[existingIdx] = { ...prev, ...cleanProperty, addedAt: prev.addedAt || now, updatedAt: now };
   } else {
     state.properties.push(cleanProperty);
   }
