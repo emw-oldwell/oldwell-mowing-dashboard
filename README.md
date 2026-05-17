@@ -12,7 +12,36 @@ Schedule, crew, and photo tracking for Old Well's mowing operation. Auto-syncs e
 
 ## Crew → Office update flow
 
-The app saves edits on each device. Tapping **Notify office** (or finishing a job) opens the phone's mail app with a prefilled summary addressed to `mow@oldwellco.com` — the shared inbox the office already monitors. Multi-device write-back to SharePoint is the next milestone (see *Roadmap* below).
+The app saves edits on each device. Tapping **Notify office** (or finishing a job) opens the phone's mail app with a prefilled summary addressed to `mow@oldwellco.com` — the shared inbox the office already monitors. Cross-device sync is live: edits commit to `events.json` via the Vercel write proxy, and every device picks them up within 30s.
+
+## Office: live Excel view
+
+Auto-generated CSVs refresh every 15 min in `exports/`. Use them in Excel as a live database view of the whole operation.
+
+**One-time setup in Excel:**
+
+1. **Data** → **Get Data** → **From Other Sources** → **From Web**
+2. Paste one of these URLs:
+   - Every job: `https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/exports/schedule.csv`
+   - Per-property rollup: `https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/exports/properties.csv`
+   - Per-crew rollup: `https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/exports/crews.csv`
+3. Excel loads the table. Right-click the result → **Properties** → check **Refresh data when opening the file** so it auto-pulls fresh data each time you open the workbook.
+
+Now pivot tables, charts, filters all work against live data.
+
+### What's in `schedule.csv`
+
+One row per job. Effective values (after the app's overlays) plus the originals so you can audit reschedules/reassigns:
+
+- `JobID`, `PropertyID`, `PropertyNickname`, `TypeID`, `ContractorName`, `ScheduledDate`, `Status` — effective values
+- `Rescheduled`, `Reassigned`, `TypeOverridden`, `Cancelled` — yes/blank flags
+- `OriginalScheduledDate`, `OriginalContractor`, `OriginalType` — what SharePoint said
+- `OnMyWayAt`, `StartedAt`, `FinishedAt`, `FinishedLat`, `FinishedLng` — crew timing + geolocation
+- `PhotoCount`, `PhotoUrls` — semicolon-joined raw photo URLs
+- `CrewNotes`, `OfficeNotes` — newlines flattened to `/` so each row stays single-line
+- `UpdatedBy`, `LastUpdate`, `IsCustomJob`
+
+Deleted entries (tombstones) are excluded.
 
 ## Architecture
 
