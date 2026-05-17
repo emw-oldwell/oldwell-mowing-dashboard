@@ -1,0 +1,7 @@
+{
+  "name": "oldwell-mowing-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mowing schedule + crew/office app for Old Well. Static site served by GitHub Pages; write API served by Vercel.",
+  "engines": { "node": ">=20" }
+}

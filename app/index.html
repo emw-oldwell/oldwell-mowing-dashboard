@@ -84,6 +84,19 @@ img { display: block; }
   display: inline-flex; align-items: center; gap: 4px;
 }
 .topbar .right-btn.primary { background: var(--green-deep); border-color: var(--green-deep); color: #fff; }
+.sync-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px 3px 7px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; letter-spacing: .02em;
+  background: var(--surface-2); color: var(--text-muted);
+  white-space: nowrap; flex-shrink: 0;
+}
+.sync-pill::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+}
+.sync-pill.ok { background: var(--green-soft); color: var(--green-deep); }
+.sync-pill.syncing { background: var(--blue-soft); color: var(--blue); }
+.sync-pill.offline { background: var(--amber-soft); color: var(--amber); }
 
 .signin { flex: 1; display: flex; flex-direction: column; padding: 24px 20px 40px; }
 .signin .hero { margin-top: 28px; margin-bottom: 26px; }
@@ -613,11 +626,17 @@ textarea.notes:focus { outline: none; border-color: var(--green); background: #f
 
 <script>
 const DATA_URL = '../data.json';
+const EVENTS_URL = '../events.json';
 const STATE_KEY = 'oldwell-field-v1';
 const WEEK_LOOKAHEAD = 7;
 const UPCOMING_LOOKAHEAD = 21;
 // Where crew taps "Notify office" — the already-monitored shared mailbox.
 const OFFICE_EMAIL = 'mow@oldwellco.com';
+// Cross-device sync. Set window.OLDWELL_SYNC_BASE to the Vercel project URL
+// (e.g. "https://oldwell-mowing.vercel.app") to enable cloud writeback.
+// When unset, the app falls back to localStorage-only + the mailto Notify path.
+const SYNC_BASE = (typeof window !== 'undefined' && window.OLDWELL_SYNC_BASE) || '';
+const SYNC_POLL_MS = 30000;
 
 const TYPE_LABELS = { LUX: 'Lux', VAC1: 'Vacant 1', VAC2: 'Vacant 2', RNT: 'Rental' };
 const TYPE_OPTIONS = ['LUX', 'VAC1', 'VAC2', 'RNT'];
@@ -636,7 +655,141 @@ function loadState() {
   } catch { return { signedInAs: null, jobUpdates: {}, customJobs: [] }; }
 }
 function saveState() { localStorage.setItem(STATE_KEY, JSON.stringify(state)); }
-function jobUpdate(jobId) { if (!state.jobUpdates[jobId]) state.jobUpdates[jobId] = {}; return state.jobUpdates[jobId]; }
+// Use when mutating a specific job's overlay — persists locally AND pushes to sync API.
+// Pass customJob (the full job object) on first save of a brand-new office-created job.
+function saveJob(jobId, customJob) {
+  saveState();
+  if (jobId) pushEvent(jobId, customJob);
+}
+function jobUpdate(jobId) {
+  if (!state.jobUpdates[jobId]) state.jobUpdates[jobId] = {};
+  state.jobUpdates[jobId].lastUpdate = new Date().toISOString();
+  if (state.signedInAs) state.jobUpdates[jobId].updatedBy = state.signedInAs;
+  return state.jobUpdates[jobId];
+}
+
+/* ===== Cross-device sync =====
+ * Reads events.json (server overlays) and merges into localStorage on load + poll.
+ * Posts every change to /api/event (debounced per job). Last-write-wins per JobID,
+ * gated by lastUpdate timestamp so a slow phone can't clobber newer state.
+ */
+const syncState = { lastPullAt: null, lastPushAt: null, pending: new Map(), polling: null, online: navigator.onLine !== false };
+
+async function pullRemoteEvents() {
+  try {
+    const r = await fetch(EVENTS_URL + '?t=' + Date.now(), { cache: 'no-store' });
+    if (r.status === 404) { syncState.lastPullAt = Date.now(); return; }
+    if (!r.ok) throw new Error('events.json ' + r.status);
+    const remote = await r.json();
+    mergeRemote(remote);
+    syncState.lastPullAt = Date.now();
+    updateSyncIndicator();
+  } catch (e) {
+    console.warn('pull events failed', e);
+  }
+}
+
+function mergeRemote(remote) {
+  if (!remote || typeof remote !== 'object') return;
+  let changed = false;
+  for (const [jobId, server] of Object.entries(remote.events || {})) {
+    const local = state.jobUpdates[jobId];
+    const localTime = local?.lastUpdate || '';
+    const serverTime = server?.lastUpdate || '';
+    // Server wins when its timestamp is newer OR equal (server is canonical for ties)
+    if (!local || serverTime >= localTime) {
+      state.jobUpdates[jobId] = { ...server };
+      changed = true;
+    }
+  }
+  for (const job of (remote.customJobs || [])) {
+    if (!state.customJobs.find(j => j.JobID === job.JobID)) {
+      state.customJobs.push(job);
+      changed = true;
+    }
+  }
+  if (changed) {
+    saveState();
+    if (typeof render === 'function' && document.getElementById('app')) render();
+  }
+}
+
+function pushEvent(jobId, customJob) {
+  if (!SYNC_BASE) return; // sync disabled — localStorage only
+  const u = state.jobUpdates[jobId];
+  if (!u) return;
+  // Debounce per-job so a rapid burst of saves coalesces into one POST
+  const existing = syncState.pending.get(jobId);
+  if (existing) clearTimeout(existing.timer);
+  const timer = setTimeout(() => doPushEvent(jobId, customJob), 600);
+  syncState.pending.set(jobId, { timer, customJob });
+}
+
+async function doPushEvent(jobId, customJob) {
+  syncState.pending.delete(jobId);
+  const u = state.jobUpdates[jobId];
+  if (!u) return;
+  // Strip base64 dataUrl from photos before POST — keep only the synced cloud `url`.
+  // Photos without a URL yet (still uploading) are skipped; they'll sync on the next push.
+  const eventForWire = { ...u };
+  if (u.photos) {
+    eventForWire.photos = u.photos
+      .filter(p => p.url)
+      .map(p => ({ id: p.id, url: p.url, takenAt: p.takenAt, takenBy: p.takenBy }));
+  }
+  try {
+    const r = await fetch(SYNC_BASE + '/api/event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId, event: eventForWire, customJob }),
+    });
+    if (!r.ok) throw new Error('event POST ' + r.status);
+    syncState.lastPushAt = Date.now();
+    updateSyncIndicator();
+  } catch (e) {
+    console.warn('push event failed', e);
+    showToast('Saved on phone — sync will retry');
+    // Retry on next poll cycle by re-queueing
+    setTimeout(() => pushEvent(jobId, customJob), 15000);
+  }
+}
+
+async function uploadPhoto(jobId, dataUrl, filename) {
+  if (!SYNC_BASE) return null;
+  try {
+    const r = await fetch(SYNC_BASE + '/api/photo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId, dataUrl, filename: filename || 'photo.jpg' }),
+    });
+    if (!r.ok) throw new Error('photo POST ' + r.status);
+    const j = await r.json();
+    return j.url || null;
+  } catch (e) {
+    console.warn('photo upload failed', e);
+    return null;
+  }
+}
+
+function startSyncLoop() {
+  if (!SYNC_BASE) return;
+  if (syncState.polling) clearInterval(syncState.polling);
+  syncState.polling = setInterval(() => { if (syncState.online) pullRemoteEvents(); }, SYNC_POLL_MS);
+  window.addEventListener('online', () => { syncState.online = true; pullRemoteEvents(); });
+  window.addEventListener('offline', () => { syncState.online = false; updateSyncIndicator(); });
+}
+
+function updateSyncIndicator() {
+  const el = document.getElementById('sync-pill');
+  if (!el) return;
+  if (!SYNC_BASE) { el.textContent = 'Local only'; el.className = 'sync-pill offline'; return; }
+  if (!syncState.online) { el.textContent = 'Offline'; el.className = 'sync-pill offline'; return; }
+  const ts = Math.max(syncState.lastPullAt || 0, syncState.lastPushAt || 0);
+  if (!ts) { el.textContent = 'Syncing…'; el.className = 'sync-pill syncing'; return; }
+  const age = Math.round((Date.now() - ts) / 1000);
+  el.textContent = age < 60 ? 'Synced' : Math.round(age / 60) + 'm ago';
+  el.className = 'sync-pill ok';
+}
 
 function isCancelled(job) { return !!state.jobUpdates[job.JobID]?.cancelled; }
 function effectiveDate(job) {
@@ -699,8 +852,11 @@ async function init() {
     document.getElementById('app').innerHTML = errorScreen(e.message);
     return;
   }
+  // Pull remote overlays before first render so we don't show stale local state.
+  await pullRemoteEvents();
   window.addEventListener('hashchange', () => { closeSheet(); render(); });
   render();
+  startSyncLoop();
 }
 
 function render() {
@@ -719,6 +875,7 @@ function render() {
     else { app.innerHTML = dayScreen(); attachDayHandlers(); }
   }
   attachScrollHandler();
+  updateSyncIndicator();
   window.scrollTo(0, 0);
 }
 
@@ -840,6 +997,7 @@ function dayScreen() {
     <header class="topbar" id="topbar">
       <span class="avatar" style="width:34px; height:34px; font-size:13px;">${initials(state.signedInAs)}</span>
       <h1>${esc(state.signedInAs)}</h1>
+      <span class="sync-pill" id="sync-pill">…</span>
       <button class="icon-btn" id="signout-btn" title="Sign out">${iconSvg('logout', 20)}</button>
     </header>
     <div class="day-header fade-in">
@@ -918,8 +1076,8 @@ function jobScreen(jobId) {
   const last = lastVisitFor(job);
   const photos = u.photos || [];
   const photoTiles = photos.map(p => `
-    <div class="photo-tile" data-zoom="${escAttr(p.dataUrl)}">
-      <img src="${escAttr(p.dataUrl)}" alt="">
+    <div class="photo-tile" data-zoom="${escAttr(crewPhotoSrc(p))}">
+      <img src="${escAttr(crewPhotoSrc(p))}" alt="">
       <button class="rm" data-rm="${escAttr(p.id)}" title="Remove">×</button>
     </div>
   `).join('');
@@ -996,7 +1154,7 @@ function attachJobHandlers(jobId) {
     let saveTimer;
     notes.addEventListener('input', () => {
       clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => { const u = jobUpdate(jobId); u.notes = notes.value; saveState(); }, 350);
+      saveTimer = setTimeout(() => { const u = jobUpdate(jobId); u.notes = notes.value; saveJob(jobId); }, 350);
     });
   }
   const photoInput = document.getElementById('photo-input');
@@ -1004,17 +1162,32 @@ function attachJobHandlers(jobId) {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     let added = 0;
+    const newPhotos = [];
     for (const f of files) {
       try {
         const dataUrl = await fileToResizedDataUrl(f, 1280);
         const u = jobUpdate(jobId);
         if (!u.photos) u.photos = [];
-        u.photos.push({ id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), dataUrl, takenAt: new Date().toISOString(), takenBy: state.signedInAs });
+        const photo = { id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), dataUrl, takenAt: new Date().toISOString(), takenBy: state.signedInAs };
+        u.photos.push(photo);
+        newPhotos.push({ photo, filename: f.name || 'photo.jpg' });
         added++;
       } catch (err) { console.warn('photo error', err); }
     }
-    saveState(); e.target.value = ''; render();
+    saveJob(jobId);
+    e.target.value = '';
+    render();
     if (added > 0) showToast(added + (added === 1 ? ' photo added' : ' photos added'));
+    // Upload to API in background so other devices see it. Photo gets a `url` field
+    // once uploaded; the next saveJob will sync those URLs (event.js strips dataUrl).
+    for (const { photo, filename } of newPhotos) {
+      uploadPhoto(jobId, photo.dataUrl, filename).then(url => {
+        if (!url) return;
+        const u = jobUpdate(jobId);
+        const p = (u.photos || []).find(x => x.id === photo.id);
+        if (p) { p.url = url; saveJob(jobId); }
+      });
+    }
   });
 
   document.querySelectorAll('[data-zoom]').forEach(el => {
@@ -1026,7 +1199,7 @@ function attachJobHandlers(jobId) {
       const id = btn.dataset.rm;
       const u = jobUpdate(jobId);
       u.photos = (u.photos || []).filter(p => p.id !== id);
-      saveState(); render();
+      saveJob(jobId); render();
     });
   });
 
@@ -1035,14 +1208,14 @@ function attachJobHandlers(jobId) {
       const act = btn.dataset.act;
       const u = jobUpdate(jobId);
       const now = new Date().toISOString();
-      if (act === 'onway') { u.onMyWayAt = now; u.status = 'OnWay'; saveState(); showToast('Marked on the way'); render(); }
+      if (act === 'onway') { u.onMyWayAt = now; u.status = 'OnWay'; saveJob(jobId); showToast('Marked on the way'); render(); }
       else if (act === 'start') {
         u.startedAt = now; if (!u.onMyWayAt) u.onMyWayAt = now;
-        u.status = 'InProgress'; saveState(); showToast('Job started'); render();
+        u.status = 'InProgress'; saveJob(jobId); showToast('Job started'); render();
       } else if (act === 'finish') {
-        u.finishedAt = now; u.status = 'Done'; saveState();
+        u.finishedAt = now; u.status = 'Done'; saveJob(jobId);
         if (navigator.geolocation) navigator.geolocation.getCurrentPosition(
-          pos => { u.finishedLat = pos.coords.latitude; u.finishedLng = pos.coords.longitude; u.finishedAccuracy = pos.coords.accuracy; saveState(); },
+          pos => { u.finishedLat = pos.coords.latitude; u.finishedLng = pos.coords.longitude; u.finishedAccuracy = pos.coords.accuracy; saveJob(jobId); },
           () => {}, { timeout: 6000, maximumAge: 60000, enableHighAccuracy: false }
         );
         showToast('Job complete — sending update to office');
@@ -1052,9 +1225,9 @@ function attachJobHandlers(jobId) {
       } else if (act === 'undo') {
         delete u.status; delete u.finishedAt; delete u.startedAt; delete u.onMyWayAt;
         delete u.finishedLat; delete u.finishedLng; delete u.finishedAccuracy;
-        saveState(); showToast('Re-opened'); render();
+        saveJob(jobId); showToast('Re-opened'); render();
       } else if (act === 'uncancel') {
-        delete u.cancelled; saveState(); showToast('Restored'); render();
+        delete u.cancelled; saveJob(jobId); showToast('Restored'); render();
       } else if (act === 'notify') {
         notifyOffice(job);
       }
@@ -1093,6 +1266,7 @@ function officeShell(active, body) {
     <header class="topbar" id="topbar">
       <span class="avatar" style="width:34px; height:34px; font-size:12px; background: var(--green-deep); color:#fff; border-color: var(--green-deep);">${iconSvg('home', 16)}</span>
       <h1>${officeTitle(active)}</h1>
+      <span class="sync-pill" id="sync-pill">…</span>
       <button class="icon-btn" id="signout-btn" title="Sign out">${iconSvg('logout', 20)}</button>
     </header>
     <div class="page">${body}</div>
@@ -1466,7 +1640,7 @@ function propertyDetailScreen(propId) {
       ${done.slice(0, 12).map(j => {
         const d = effectiveDate(j);
         const u = state.jobUpdates[j.JobID] || {};
-        const photos = [...renderableServerAttachments(j), ...((u.photos || []).map(p => ({ FileName: 'crew.jpg', ServerRelativeUrl: p.dataUrl })))];
+        const photos = [...renderableServerAttachments(j), ...((u.photos || []).map(p => ({ FileName: 'crew.jpg', ServerRelativeUrl: crewPhotoSrc(p) })))];
         const thumb = photos[0]?.ServerRelativeUrl;
         return `
           <button class="timeline-item" data-sheet-job="${escAttr(j.JobID)}">
@@ -1559,7 +1733,7 @@ function openOfficeJobSheet(jobId) {
       <label>Photos</label>
       <div class="photo-strip">
         ${serverAtts.map(a => `<div class="photo-tile" data-zoom="${escAttr(a.ServerRelativeUrl)}"><img src="${escAttr(a.ServerRelativeUrl)}" alt=""></div>`).join('')}
-        ${u_photos.map(p => `<div class="photo-tile" data-zoom="${escAttr(p.dataUrl)}"><img src="${escAttr(p.dataUrl)}" alt=""></div>`).join('')}
+        ${u_photos.map(p => `<div class="photo-tile" data-zoom="${escAttr(crewPhotoSrc(p))}"><img src="${escAttr(crewPhotoSrc(p))}" alt=""></div>`).join('')}
       </div>
     </div>` : '';
 
@@ -1627,31 +1801,31 @@ function openOfficeJobSheet(jobId) {
     dateEl.addEventListener('change', () => {
       if (!dateEl.value) return;
       u.rescheduledTo = new Date(dateEl.value + 'T12:00:00').toISOString();
-      saveState(); showToast('Rescheduled'); render();
+      saveJob(jobId); showToast('Rescheduled'); render();
     });
     contractorEl.addEventListener('change', () => {
-      u.reassignedTo = contractorEl.value; saveState();
+      u.reassignedTo = contractorEl.value; saveJob(jobId);
       showToast('Reassigned to ' + contractorEl.value); render();
     });
     typeEl.addEventListener('change', () => {
-      u.typeOverride = typeEl.value; saveState();
+      u.typeOverride = typeEl.value; saveJob(jobId);
       showToast('Type updated'); render();
     });
     let noteTimer;
     noteEl.addEventListener('input', () => {
       clearTimeout(noteTimer);
-      noteTimer = setTimeout(() => { u.officeNote = noteEl.value; saveState(); }, 350);
+      noteTimer = setTimeout(() => { u.officeNote = noteEl.value; saveJob(jobId); }, 350);
     });
     document.querySelectorAll('[data-sheet-act]').forEach(btn => {
       btn.addEventListener('click', () => {
         const act = btn.dataset.sheetAct;
-        if (act === 'markdone') { u.status = 'Done'; u.finishedAt = new Date().toISOString(); u.finishedBy = 'office'; saveState(); showToast('Marked done'); closeSheet(); render(); }
-        else if (act === 'reopen') { delete u.status; delete u.finishedAt; delete u.startedAt; delete u.onMyWayAt; saveState(); showToast('Re-opened'); closeSheet(); render(); }
+        if (act === 'markdone') { u.status = 'Done'; u.finishedAt = new Date().toISOString(); u.finishedBy = 'office'; saveJob(jobId); showToast('Marked done'); closeSheet(); render(); }
+        else if (act === 'reopen') { delete u.status; delete u.finishedAt; delete u.startedAt; delete u.onMyWayAt; saveJob(jobId); showToast('Re-opened'); closeSheet(); render(); }
         else if (act === 'cancel') {
           if (!confirm('Cancel this job? It\'ll be hidden from crews and overview counts.')) return;
-          u.cancelled = true; saveState(); showToast('Cancelled'); closeSheet(); render();
+          u.cancelled = true; saveJob(jobId); showToast('Cancelled'); closeSheet(); render();
         }
-        else if (act === 'restore') { delete u.cancelled; saveState(); showToast('Restored'); closeSheet(); render(); }
+        else if (act === 'restore') { delete u.cancelled; saveJob(jobId); showToast('Restored'); closeSheet(); render(); }
       });
     });
   });
@@ -1729,7 +1903,10 @@ function openNewJobSheet() {
       const note = document.getElementById('new-note').value.trim();
       if (note) jobUpdate(newJob.JobID).officeNote = note;
       state.customJobs.push(newJob);
-      saveState(); closeSheet(); showToast('Job added'); render();
+      saveState();
+      // Push the overlay AND the customJob itself so other devices see this new job.
+      pushEvent(newJob.JobID, newJob);
+      closeSheet(); showToast('Job added'); render();
     });
   });
 }
@@ -1760,7 +1937,7 @@ function recentActivityEvents(daysBack) {
     // From localStorage updates
     if (u?.finishedAt && new Date(u.finishedAt) >= cutoff) {
       const photoCount = (u.photos || []).length;
-      const photoUrl = u.photos?.[0]?.dataUrl;
+      const photoUrl = u.photos?.[0] ? crewPhotoSrc(u.photos[0]) : null;
       events.push({ kind: 'done', at: new Date(u.finishedAt), contractor, property, verb: 'finished', timeText: timeAgo(u.finishedAt), photoCount, photoUrl, jobId: j.JobID });
     } else if (u?.startedAt && new Date(u.startedAt) >= cutoff) {
       events.push({ kind: 'start', at: new Date(u.startedAt), contractor, property, verb: 'started', timeText: timeAgo(u.startedAt), jobId: j.JobID });
@@ -1818,7 +1995,8 @@ function recentPhotos(daysBack) {
     for (const p of (u?.photos || [])) {
       const visitDate = new Date(p.takenAt || u.finishedAt || date);
       if (visitDate >= cutoff && visitDate <= addDays(today, 1)) {
-        out.push({ url: p.dataUrl, propertyName: j.PropertyNickname || '?', when: visitDate, whenLabel: relativeWhen(visitDate), jobId: j.JobID });
+        const src = crewPhotoSrc(p);
+        if (src) out.push({ url: src, propertyName: j.PropertyNickname || '?', when: visitDate, whenLabel: relativeWhen(visitDate), jobId: j.JobID });
       }
     }
   }
@@ -1921,6 +2099,8 @@ function renderableServerAttachments(job) {
   return (job?.Attachments || []).filter(a => isRenderablePhoto(a.FileName));
 }
 function firstRenderableAttachment(job) { return renderableServerAttachments(job)[0] || null; }
+// Crew photos can have either a local dataUrl (just captured), a synced cloud url, or both.
+function crewPhotoSrc(p) { return p?.url || p?.dataUrl || ''; }
 
 function showToast(msg) {
   const t = document.getElementById('toast');
