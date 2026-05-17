@@ -297,7 +297,7 @@ textarea.notes:focus { outline: none; border-color: var(--green); background: #f
 
 /* KPI strip */
 .kpi-strip {
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(3, 1fr);
   gap: 8px; padding: 0 16px 4px;
 }
 .kpi-card {
@@ -1323,9 +1323,11 @@ function officeTodayScreen() {
     if (effectiveStatus(j) === 'Done' && isSameDay(effectiveDate(j), today)) return true;
     return false;
   });
-  const liveNow = jobs.filter(j => {
+  const donePast7 = jobs.filter(j => {
+    if (effectiveStatus(j) !== 'Done') return false;
     const u = state.jobUpdates[j.JobID];
-    return (u?.startedAt && !u?.finishedAt) || u?.status === 'InProgress' || u?.status === 'OnWay';
+    const when = u?.finishedAt ? new Date(u.finishedAt) : effectiveDate(j);
+    return when >= addDays(today, -7) && when <= addDays(today, 1);
   });
   const lateNotDone = jobs.filter(j => {
     if (effectiveStatus(j) === 'Done') return false;
@@ -1381,8 +1383,7 @@ function officeTodayScreen() {
       <div class="subtitle">${officeSubtitle(activeToday, doneToday, weekJobs)}</div>
     </div>
     <div class="kpi-strip">
-      <div class="kpi-card green"><div class="num">${doneToday.length}</div><div class="label">Done today</div></div>
-      <div class="kpi-card blue"><div class="num">${liveNow.length}</div><div class="label">Live now</div></div>
+      <div class="kpi-card green"><div class="num">${donePast7.length}</div><div class="label">Done · past 7d</div></div>
       <div class="kpi-card red"><div class="num">${lateNotDone.length}</div><div class="label">Past due</div></div>
       <div class="kpi-card"><div class="num">${weekJobs.length}</div><div class="label">Next 7d</div></div>
     </div>
