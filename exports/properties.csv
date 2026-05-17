@@ -1,6 +1,6 @@
 PropertyID,PropertyNickname,TypeID,DefaultContractor,TotalJobs,DoneJobs,PendingJobs,CancelledJobs,LastDoneDate,NextScheduledDate,DaysSinceLastDone
 P-008,15TH,VAC2,George Jimenez Landscaping,4,1,3,0,2026-05-10,2026-06-24,7
-P-005,2049,RNT,Pristine Properties,11,1,10,0,2026-05-13,2026-05-27,4
+P-005,2049,RNT,Tony Bolt,11,1,10,0,2026-05-01,2026-05-27,16
 P-012,707,LUX,Pristine Properties,17,2,15,0,2026-05-13,2026-05-20,4
 P-006,BOUND,VAC2,George Jimenez Landscaping,4,1,3,0,2026-05-10,2026-06-24,7
 P-007,CHURCH,VAC2,George Jimenez Landscaping,5,1,4,0,2026-04-22,2026-06-06,25
