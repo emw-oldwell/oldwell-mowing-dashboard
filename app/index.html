@@ -164,6 +164,22 @@ img { display: block; }
   margin-bottom: 8px;
 }
 .switcher-add-crew:active { background: var(--green-pale); border-color: var(--green); }
+
+/* Crew contact chips in the office job sheet */
+.crew-contact-row {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin: 4px 0 12px;
+}
+.contact-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px;
+  background: var(--green-pale); color: var(--green-deep);
+  border: 1px solid var(--green-soft); border-radius: 999px;
+  font-size: 13px; font-weight: 600;
+  text-decoration: none;
+  min-height: 36px;
+}
+.contact-btn:active { background: var(--green-soft); }
 .sync-pill::before {
   content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor;
 }
@@ -1492,6 +1508,58 @@ function cascadeFinishedProperty(finishedJob, finishedAtIso) {
   }
 }
 
+// Recompute the rest of a property's season anchored at today + cadence.
+// Useful after un-cancellations, re-opens, or manual reschedules that have
+// drifted out of step. Touches only pending jobs scheduled today-or-later;
+// past-due catch-ups are left alone.
+function recomputeProperty(propKey) {
+  const propJobs = activeJobs().filter(j => (j.PropertyID || j.PropertyNickname) === propKey);
+  if (!propJobs.length) { showToast('No jobs found for this property'); return; }
+  const typeId = effectiveType(propJobs[0]);
+  if (!CADENCE_DAYS[typeId]) { showToast(`Unknown cadence for type ${typeId}`); return; }
+
+  const today = startOfToday();
+  const todayNoonUtc = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 12, 0, 0));
+  const seasonYear = todayNoonUtc.getUTCFullYear();
+  const endOfSeason = Date.UTC(seasonYear, SEASON_END_MONTH - 1, SEASON_END_DAY, 12, 0, 0);
+
+  const pending = propJobs
+    .filter(j => effectiveStatus(j) === 'Pending')
+    .filter(j => effectiveDate(j) >= today)
+    .sort((a, b) => effectiveDate(a) - effectiveDate(b));
+  if (!pending.length) { showToast('No pending future jobs to recompute'); return; }
+
+  let prev = todayNoonUtc;
+  let shifted = 0, cancelled = 0;
+  for (const j of pending) {
+    const days = cadenceDaysFor(typeId, prev);
+    if (!days) {
+      const u = jobUpdate(j.JobID);
+      u.cancelled = true; u.cancelReason = 'recompute: dormant season';
+      saveJob(j.JobID); cancelled++; continue;
+    }
+    const nxt = new Date(prev);
+    nxt.setUTCDate(nxt.getUTCDate() + days);
+    nxt.setUTCHours(12, 0, 0, 0);
+    if (nxt.getTime() > endOfSeason) {
+      const u = jobUpdate(j.JobID);
+      u.cancelled = true; u.cancelReason = 'recompute: past season end';
+      saveJob(j.JobID); cancelled++; prev = nxt; continue;
+    }
+    const u = jobUpdate(j.JobID);
+    u.rescheduledTo = nxt.toISOString();
+    u.recomputedAt = new Date().toISOString();
+    delete u.cascadedFrom;
+    saveJob(j.JobID);
+    shifted++; prev = nxt;
+  }
+  const bits = [];
+  if (shifted) bits.push(`${shifted} reschedul${shifted === 1 ? 'ed' : 'es'}`);
+  if (cancelled) bits.push(`${cancelled} rolled to next season`);
+  showToast(`Schedule recomputed · ${bits.join(', ')}`);
+  render();
+}
+
 /* ===== Add Property — form, generator, atomic API push ===== */
 function openAddPropertySheet() {
   const crews = uniqueContractors();
@@ -2179,7 +2247,10 @@ function propertyDetailScreen(propId) {
   const bucket = ageBucket(lastDays, type);
 
   const upcomingBlock = upcoming.length ? `
-    <div class="section-label">Upcoming <span class="count">· next ${Math.min(upcoming.length, 6)}</span></div>
+    <div class="section-label">
+      Upcoming <span class="count">· next ${Math.min(upcoming.length, 6)}</span>
+      <span class="right"><button class="btn small ghost" id="recompute-btn" style="font-size:12px; padding:4px 10px; min-height:auto;">⟳ Recompute</button></span>
+    </div>
     <div class="timeline-list">
       ${upcoming.slice(0, 6).map(j => {
         const d = effectiveDate(j);
@@ -2252,6 +2323,11 @@ function attachPropertyDetailHandlers(propId) {
     el.addEventListener('click', (ev) => { if (ev.target.matches('[data-zoom]')) return; openOfficeJobSheet(el.dataset.sheetJob); });
   });
   document.querySelectorAll('[data-zoom]').forEach(el => el.addEventListener('click', (ev) => { ev.stopPropagation(); openLightbox(el.dataset.zoom); }));
+  document.getElementById('recompute-btn')?.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    if (!confirm("Recompute this property's schedule?\n\nShifts every upcoming pending mow forward, anchored to TODAY + the cadence rules. Useful after un-cancellations, reopened jobs, or manual reschedules that drifted out of step.\n\nCatch-up (past-due) jobs are left alone. Cancel individual mows manually if you don't want them recomputed.")) return;
+    recomputeProperty(propId);
+  });
 }
 
 /* ===== Office: Photos ===== */
@@ -2322,7 +2398,8 @@ function openOfficeJobSheet(jobId) {
       ${status !== 'Pending' ? renderStatusBadge(status, u) : ''}
     </div>
     <h2>${esc(job.PropertyNickname || '?')}</h2>
-    <div class="lede">${esc(esc(dayLabel(date)))} · ${esc(effectiveContractor(job) || '')}</div>
+    <div class="lede">${esc(dayLabel(date))} · ${esc(effectiveContractor(job) || '')}</div>
+    ${crewContactButtons(effectiveContractor(job))}
 
     <div class="field-row">
       <div class="field">
@@ -2603,6 +2680,25 @@ function uniqueContractors() {
   for (const j of (state?.customJobs || [])) if (j.ContractorName) set.add(j.ContractorName);
   for (const c of (state?.crews || [])) if (c.name) set.add(c.name);
   return Array.from(set).sort();
+}
+function findCrew(name) {
+  if (!name) return null;
+  return (state?.crews || []).find(c => c.name === name) || null;
+}
+function crewContactButtons(name) {
+  const crew = findCrew(name);
+  if (!crew) return '';
+  const bits = [];
+  if (crew.phone) {
+    const dial = crew.phone.replace(/[^\d+]/g, '');
+    bits.push(`<a class="contact-btn" href="tel:${escAttr(dial)}">📞 ${esc(crew.phone)}</a>`);
+    bits.push(`<a class="contact-btn" href="sms:${escAttr(dial)}">💬 Text</a>`);
+  }
+  if (crew.email) {
+    bits.push(`<a class="contact-btn" href="mailto:${escAttr(crew.email)}">✉ ${esc(crew.email)}</a>`);
+  }
+  if (!bits.length) return '';
+  return `<div class="crew-contact-row">${bits.join('')}</div>`;
 }
 function countJobsThisWeek(c) {
   const today = startOfToday();
