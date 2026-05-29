@@ -2661,7 +2661,7 @@ function openOfficeJobSheet(jobId) {
   } else if (status === 'Done') {
     statusActions = `<button class="btn" data-sheet-act="reopen">Re-open</button><button class="btn danger" data-sheet-act="cancel">Cancel job</button>`;
   } else {
-    statusActions = `<button class="btn primary" data-sheet-act="markdone">✓ Mark done</button><button class="btn danger" data-sheet-act="cancel">Cancel job</button>`;
+    statusActions = `<button class="btn primary" data-sheet-act="markdone">✓ Mark mowed</button><button class="btn danger" data-sheet-act="cancel">Cancel job</button>`;
   }
 
   const body = `
@@ -2676,7 +2676,7 @@ function openOfficeJobSheet(jobId) {
 
     <div class="field-row">
       <div class="field">
-        <label>Date</label>
+        <label>${status === 'Done' ? 'Mow date' : 'Date'}</label>
         <input id="sheet-date" type="date" value="${escAttr(dateStr)}">
       </div>
       <div class="field">
@@ -2685,6 +2685,9 @@ function openOfficeJobSheet(jobId) {
           ${contractors.map(c => `<option value="${escAttr(c)}" ${c === effectiveContractor(job) ? 'selected' : ''}>${esc(c)}</option>`).join('')}
         </select>
       </div>
+    </div>
+    <div style="font-size: 12px; color: var(--text-muted); margin: -4px 0 12px;">
+      ${status === 'Done' ? 'Changing the date moves the recorded mow date and re-runs the schedule from it.' : 'Set the actual mow date here, then “Mark mowed” — the next mows recompute from this date.'}
     </div>
     <div class="field">
       <label>Type</label>
@@ -2720,8 +2723,17 @@ function openOfficeJobSheet(jobId) {
 
     dateEl.addEventListener('change', () => {
       if (!dateEl.value) return;
-      u.rescheduledTo = new Date(dateEl.value + 'T12:00:00').toISOString();
-      saveJob(jobId); showToast('Rescheduled'); render();
+      const iso = new Date(dateEl.value + 'T12:00:00').toISOString();
+      u.rescheduledTo = iso;
+      if (effectiveStatus(job) === 'Done') {
+        // For a done job, the date IS the recorded mow date — keep finish in sync and re-run the schedule.
+        u.finishedAt = iso;
+        saveJob(jobId);
+        cascadeFinishedProperty(job, iso);
+        showToast('Mow date updated'); render();
+      } else {
+        saveJob(jobId); showToast('Rescheduled'); render();
+      }
     });
     contractorEl.addEventListener('change', () => {
       u.reassignedTo = contractorEl.value; saveJob(jobId);
@@ -2740,10 +2752,12 @@ function openOfficeJobSheet(jobId) {
       btn.addEventListener('click', () => {
         const act = btn.dataset.sheetAct;
         if (act === 'markdone') {
-          const finishedAt = new Date().toISOString();
-          u.status = 'Done'; u.finishedAt = finishedAt; u.finishedBy = 'office'; saveJob(jobId);
-          cascadeFinishedProperty(job, finishedAt);
-          showToast('Marked done'); closeSheet(); render();
+          // Use the Date field as the actual mow date (default to today if blank).
+          const dv = dateEl.value;
+          const mowDate = dv ? new Date(dv + 'T12:00:00').toISOString() : new Date().toISOString();
+          u.status = 'Done'; u.finishedAt = mowDate; u.rescheduledTo = mowDate; u.finishedBy = 'office'; saveJob(jobId);
+          cascadeFinishedProperty(job, mowDate);
+          showToast('Marked mowed'); closeSheet(); render();
         }
         else if (act === 'reopen') { delete u.status; delete u.finishedAt; delete u.startedAt; delete u.onMyWayAt; saveJob(jobId); showToast('Re-opened'); closeSheet(); render(); }
         else if (act === 'cancel') {
