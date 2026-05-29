@@ -261,22 +261,23 @@ function mergeForDashboard(data, events) {
   return out;
 }
 
-// Tolerance window: a Pending mow is treated as "on time" if today is within
-// ±DUE_WINDOW_DAYS of the scheduled date. Past Due kicks in only after that
-// window closes, and Coming starts once we're within DUE_WINDOW_DAYS before.
+// DUE_WINDOW_DAYS only drives the ± range shown next to "Next due" in the
+// properties table. Bucketing is strict: a Pending mow dated before today is
+// Past Due; today-or-later (through +7) is Coming. (No grace window — it made
+// a 1–2-day-late mow show under "Coming" with a past date, inconsistent with
+// the properties "Next due" column.)
 const DUE_WINDOW_DAYS = 2;
 
 function bucketJobs(jobs) {
   const today = startOfToday();
   const in7 = addDays(today, 7);
   const past7 = addDays(today, -7);
-  const pastCutoff = addDays(today, -DUE_WINDOW_DAYS);   // Pending dated before this → Past Due
   const past = [], coming = [], done = [];
   for (const j of jobs) {
     const d = new Date(j.ScheduledDate); d.setHours(0,0,0,0);
     if (j.Status === 'Done') { if (d >= past7) done.push(j); }
     else if (j.Status === 'Pending') {
-      if (d < pastCutoff) past.push(j);
+      if (d < today) past.push(j);
       else if (d <= in7) coming.push(j);
     }
   }
@@ -299,7 +300,9 @@ function computeProperties(jobs) {
     if (j.Status === 'Done') {
       if (!entry.lastDone || d > entry.lastDone) { entry.lastDone = d; entry.lastDoneJob = j; }
     } else if (j.Status === 'Pending') {
-      if (d >= today && (!entry.nextPending || d < entry.nextPending)) entry.nextPending = d;
+      // soonest pending overall — including an overdue one — so "Next due"
+      // matches the schedule (and the Past Due list) instead of skipping ahead.
+      if (!entry.nextPending || d < entry.nextPending) entry.nextPending = d;
     }
   }
   return Array.from(map.values()).sort((a,b) => {
