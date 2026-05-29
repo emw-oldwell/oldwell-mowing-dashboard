@@ -1,32 +1,32 @@
 JobID,PropertyID,PropertyNickname,TypeID,ContractorName,ScheduledDate,Status,SessionNumber,IsCustomJob,Rescheduled,Reassigned,TypeOverridden,Cancelled,OriginalScheduledDate,OriginalContractor,OriginalType,OnMyWayAt,StartedAt,FinishedAt,FinishedLat,FinishedLng,PhotoCount,PhotoUrls,CrewNotes,OfficeNotes,UpdatedBy,LastUpdate
-J-0001,P-001,MIMI,LUX,Pristine Properties,2026-05-09T12:00:00Z,Done,1.0,,,,,,,,,,,,,,0,,,,,
-J-0002,P-001,MIMI,LUX,Pristine Properties,2026-05-16T12:00:00Z,Done,2.0,,,,,,,,,2026-05-18T15:16:28.099Z,2026-05-18T15:16:28.099Z,2026-05-18T15:16:40.428Z,,,2,https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/photos/J-0002_1779117398031_image.jpg; https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/photos/J-0002_1779117398031_image.jpg,,,Pristine Properties,2026-05-18T15:16:40.428Z
-J-0003,P-001,MIMI,LUX,Tony Bolt,2026-05-23T12:00:00Z,Done,3.0,,yes,yes,,,2026-05-23T12:00:00Z,Tony Bolt,,,,2026-05-23T12:00:00Z,,,0,,,,OFFICE_ALL,2026-05-29T15:45:33Z
-J-0004,P-001,MIMI,LUX,Pristine Properties,2026-05-30T12:00:00Z,Pending,4.0,,yes,,,,2026-05-30T12:00:00Z,,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:45:33Z
-J-0005,P-001,MIMI,LUX,Tony Bolt,2026-06-05T12:00:00.000Z,InProgress,1.0,,yes,yes,,,2026-06-05T12:00:00Z,Tony Bolt,,2026-05-29T14:39:45.671Z,2026-05-29T14:39:49.443Z,,,,0,,,,Tony Bolt,2026-05-29T14:39:49.444Z
-J-0006,P-001,MIMI,LUX,Tony Bolt,2026-06-12T12:00:00.000Z,InProgress,2.0,,yes,yes,,,2026-06-12T12:00:00Z,Tony Bolt,,2026-05-29T14:39:16.509Z,2026-05-29T14:39:16.509Z,,,,0,,,,Tony Bolt,2026-05-29T14:39:16.510Z
-J-0007,P-001,MIMI,LUX,Tony Bolt,2026-06-06T12:00:00Z,Pending,3.0,,yes,yes,,,2026-06-06T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:45:33Z
-J-0008,P-001,MIMI,LUX,Tony Bolt,2026-06-13T12:00:00Z,Pending,4.0,,yes,yes,,,2026-06-13T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:45:33Z
-J-0009,P-001,MIMI,LUX,Tony Bolt,2026-06-20T12:00:00Z,Pending,1.0,,yes,yes,,,2026-06-20T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:45:33Z
-J-0011,P-001,MIMI,LUX,Tony Bolt,2026-06-27T12:00:00Z,Pending,3.0,,yes,yes,,,2026-06-27T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:45:33Z
-J-0012,P-001,MIMI,LUX,Tony Bolt,2026-07-04T12:00:00Z,Pending,4.0,,yes,yes,,,2026-07-04T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:45:33Z
-J-0013,P-001,MIMI,LUX,Tony Bolt,2026-07-15T12:00:00Z,Pending,1.0,,yes,yes,,,2026-07-15T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:45:33Z
-J-0014,P-001,MIMI,LUX,Tony Bolt,2026-07-26T12:00:00Z,Pending,2.0,,yes,yes,,,2026-07-26T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:45:33Z
-J-0015,P-001,MIMI,LUX,Tony Bolt,2026-08-06T12:00:00Z,Pending,3.0,,yes,yes,,,2026-08-06T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:45:33Z
-J-0016,P-001,MIMI,LUX,Tony Bolt,2026-08-17T12:00:00Z,Pending,4.0,,yes,yes,,,2026-08-17T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:45:33Z
-J-0017,P-001,MIMI,LUX,Tony Bolt,2026-08-28T12:00:00Z,Pending,1.0,,yes,yes,,,2026-08-28T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:45:33Z
-J-0018,P-001,MIMI,LUX,Tony Bolt,2026-09-08T12:00:00Z,Pending,2.0,,yes,yes,,,2026-09-08T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:45:33Z
-J-0019,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-05-08T12:00:00Z,Done,1.0,,yes,,,,2026-05-08T12:00:00Z,,,,,2026-05-08T12:00:00Z,,,1,https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/photos/J-0019_IMG_0252.jpeg,,,office-backfill,2026-05-29T15:45:33Z
-J-0020,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-05-22T12:00:00Z,InProgress,2.0,,,,,,,,,2026-05-18T15:11:42.521Z,2026-05-18T15:11:42.521Z,,,,0,,,,The Farm Crew Landscaping,2026-05-18T15:11:42.522Z
-J-0021,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-05-22T12:00:00Z,Pending,1.0,,yes,,,,2026-05-22T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0022,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-06-05T12:00:00Z,Pending,2.0,,yes,,,,2026-06-05T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0023,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-06-19T12:00:00Z,Pending,1.0,,yes,,,,2026-06-19T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0024,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-07-03T12:00:00Z,Pending,2.0,,yes,,,,2026-07-03T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0025,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-07-17T12:00:00Z,Pending,1.0,,yes,,,,2026-07-17T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0026,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-07-31T12:00:00Z,Pending,2.0,,yes,,,,2026-07-31T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0027,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-08-14T12:00:00Z,Pending,1.0,,yes,,,,2026-08-14T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0028,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-08-28T12:00:00Z,Pending,2.0,,yes,,,,2026-08-28T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0029,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-09-11T12:00:00Z,Pending,1.0,,yes,,,,2026-09-11T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
+J-0001,P-001,MIMI,LUX,Tony Bolt,2026-05-09T12:00:00Z,Done,1.0,,,yes,,,,Tony Bolt,,,,,,,0,,,,office-reassign,2026-05-29T16:24:29Z
+J-0002,P-001,MIMI,LUX,Tony Bolt,2026-05-16T12:00:00Z,Done,2.0,,,yes,,,,Tony Bolt,,2026-05-18T15:16:28.099Z,2026-05-18T15:16:28.099Z,2026-05-18T15:16:40.428Z,,,2,https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/photos/J-0002_1779117398031_image.jpg; https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/photos/J-0002_1779117398031_image.jpg,,,Pristine Properties,2026-05-29T16:24:29Z
+J-0003,P-001,MIMI,LUX,Tony Bolt,2026-05-23T16:00:00.000Z,Done,3.0,,yes,yes,,,2026-05-23T16:00:00Z,Tony Bolt,,,,2026-05-23T16:00:00.000Z,,,0,,,,OFFICE_ALL,2026-05-29T15:57:05.930Z
+J-0004,P-001,MIMI,LUX,Tony Bolt,2026-05-30T12:00:00.000Z,Pending,4.0,,yes,yes,,,2026-05-30T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T16:24:29Z
+J-0005,P-001,MIMI,LUX,Tony Bolt,2026-06-05T12:00:00.000Z,Pending,1.0,,yes,yes,,,2026-06-05T12:00:00Z,Tony Bolt,,,,,,,0,,,,Tony Bolt,2026-05-29T16:05:11Z
+J-0006,P-001,MIMI,LUX,Tony Bolt,2026-06-12T12:00:00.000Z,Pending,2.0,,yes,yes,,,2026-06-12T12:00:00Z,Tony Bolt,,,,,,,0,,,,Tony Bolt,2026-05-29T16:05:11Z
+J-0007,P-001,MIMI,LUX,Tony Bolt,2026-06-06T12:00:00.000Z,Pending,3.0,,yes,yes,,,2026-06-06T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:57:09.724Z
+J-0008,P-001,MIMI,LUX,Tony Bolt,2026-06-13T12:00:00.000Z,Pending,4.0,,yes,yes,,,2026-06-13T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:57:09.724Z
+J-0009,P-001,MIMI,LUX,Tony Bolt,2026-06-20T12:00:00.000Z,Pending,1.0,,yes,yes,,,2026-06-20T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:57:09.724Z
+J-0011,P-001,MIMI,LUX,Tony Bolt,2026-06-27T12:00:00.000Z,Pending,3.0,,yes,yes,,,2026-06-27T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:57:09.724Z
+J-0012,P-001,MIMI,LUX,Tony Bolt,2026-07-04T12:00:00.000Z,Pending,4.0,,yes,yes,,,2026-07-04T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:57:09.724Z
+J-0013,P-001,MIMI,LUX,Tony Bolt,2026-07-15T12:00:00.000Z,Pending,1.0,,yes,yes,,,2026-07-15T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:57:09.724Z
+J-0014,P-001,MIMI,LUX,Tony Bolt,2026-07-26T12:00:00.000Z,Pending,2.0,,yes,yes,,,2026-07-26T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:57:09.725Z
+J-0015,P-001,MIMI,LUX,Tony Bolt,2026-08-06T12:00:00.000Z,Pending,3.0,,yes,yes,,,2026-08-06T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:57:09.725Z
+J-0016,P-001,MIMI,LUX,Tony Bolt,2026-08-17T12:00:00.000Z,Pending,4.0,,yes,yes,,,2026-08-17T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:57:09.725Z
+J-0017,P-001,MIMI,LUX,Tony Bolt,2026-08-28T12:00:00.000Z,Pending,1.0,,yes,yes,,,2026-08-28T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:57:09.725Z
+J-0018,P-001,MIMI,LUX,Tony Bolt,2026-09-08T12:00:00.000Z,Pending,2.0,,yes,yes,,,2026-09-08T12:00:00Z,Tony Bolt,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:57:09.725Z
+J-0019,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-05-08T12:00:00Z,Done,1.0,,yes,,,,2026-05-08T12:00:00Z,,,,,2026-05-08T12:00:00Z,,,1,https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/photos/J-0019_IMG_0252.jpeg,,,office-reset,2026-05-29T16:06:45Z
+J-0020,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-05-22T12:00:00Z,Pending,2.0,,yes,,,,2026-05-22T12:00:00Z,,,,,,,,0,,,,office-reset,2026-05-29T16:06:45Z
+J-0021,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-06-05T12:00:00Z,Pending,1.0,,yes,,,,2026-06-05T12:00:00Z,,,,,,,,0,,,,office-reset,2026-05-29T16:06:45Z
+J-0022,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-06-19T12:00:00Z,Pending,2.0,,yes,,,,2026-06-19T12:00:00Z,,,,,,,,0,,,,office-reset,2026-05-29T16:06:45Z
+J-0023,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-07-03T12:00:00Z,Pending,1.0,,yes,,,,2026-07-03T12:00:00Z,,,,,,,,0,,,,office-reset,2026-05-29T16:06:45Z
+J-0024,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-07-17T12:00:00Z,Pending,2.0,,yes,,,,2026-07-17T12:00:00Z,,,,,,,,0,,,,office-reset,2026-05-29T16:06:45Z
+J-0025,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-07-31T12:00:00Z,Pending,1.0,,yes,,,,2026-07-31T12:00:00Z,,,,,,,,0,,,,office-reset,2026-05-29T16:06:45Z
+J-0026,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-08-14T12:00:00Z,Pending,2.0,,yes,,,,2026-08-14T12:00:00Z,,,,,,,,0,,,,office-reset,2026-05-29T16:06:45Z
+J-0027,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-08-28T12:00:00Z,Pending,1.0,,yes,,,,2026-08-28T12:00:00Z,,,,,,,,0,,,,office-reset,2026-05-29T16:06:45Z
+J-0028,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-09-11T12:00:00Z,Pending,2.0,,yes,,,,2026-09-11T12:00:00Z,,,,,,,,0,,,,office-reset,2026-05-29T16:06:45Z
+J-0029,P-002,RACEWAY,RNT,The Farm Crew Landscaping,2026-09-28T12:00:00Z,Pending,1.0,,yes,,,,2026-09-28T12:00:00Z,,,,,,,,0,,,,office-reset,2026-05-29T16:06:45Z
 J-0030,P-003,PRESTON,VAC1,Tony Bolt,2026-05-06T12:00:00Z,Done,1.0,,,,,,,,,,,,,,1,https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/photos/J-0030_IMG_2688.jpeg,,,,
 J-0031,P-003,PRESTON,VAC1,Tony Bolt,2026-05-16T12:00:00Z,Done,1.0,,yes,,,,2026-05-16T12:00:00Z,,,,,2026-05-16T12:00:00Z,,,1,https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/photos/J-0031_IMG_2695.jpeg,,,OFFICE_ALL,2026-05-29T15:45:33Z
 J-0032,P-003,PRESTON,VAC1,Tony Bolt,2026-05-30T12:00:00Z,Pending,1.0,,yes,,,,2026-05-30T12:00:00Z,,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:45:33Z
@@ -37,24 +37,24 @@ J-0036,P-003,PRESTON,VAC1,Tony Bolt,2026-07-25T12:00:00Z,Pending,1.0,,yes,,,,202
 J-0037,P-003,PRESTON,VAC1,Tony Bolt,2026-08-08T12:00:00Z,Pending,1.0,,yes,,,,2026-08-08T12:00:00Z,,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:45:33Z
 J-0038,P-003,PRESTON,VAC1,Tony Bolt,2026-08-22T12:00:00Z,Pending,1.0,,yes,,,,2026-08-22T12:00:00Z,,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:45:33Z
 J-0043,P-004,ERIC,VAC1,Tony Bolt,2026-05-06T12:00:00Z,Done,1.0,,,,,,,,,,,,,,1,https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/photos/J-0043_IMG_2693.jpeg,,,,
-J-0044,P-004,ERIC,VAC1,Tony Bolt,2026-05-27T12:00:00Z,Done,1.0,,yes,,,,2026-05-27T12:00:00Z,,,,,2026-05-27T12:00:00Z,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0045,P-004,ERIC,VAC1,Tony Bolt,2026-06-10T12:00:00Z,Pending,1.0,,yes,,,,2026-06-10T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0046,P-004,ERIC,VAC1,Tony Bolt,2026-06-24T12:00:00Z,Pending,1.0,,yes,,,,2026-06-24T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0047,P-004,ERIC,VAC1,Tony Bolt,2026-07-08T12:00:00Z,Pending,1.0,,yes,,,,2026-07-08T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0048,P-004,ERIC,VAC1,Tony Bolt,2026-07-22T12:00:00Z,Pending,1.0,,yes,,,,2026-07-22T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0049,P-004,ERIC,VAC1,Tony Bolt,2026-08-05T12:00:00Z,Pending,1.0,,yes,,,,2026-08-05T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0050,P-004,ERIC,VAC1,Tony Bolt,2026-08-19T12:00:00Z,Pending,1.0,,yes,,,,2026-08-19T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0051,P-004,ERIC,VAC1,Tony Bolt,2026-09-02T12:00:00Z,Pending,1.0,,yes,,,,2026-09-02T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0057,P-005,2049,RNT,Pristine Properties,2026-05-13T12:00:00Z,Done,2.0,,yes,,,,2026-05-13T12:00:00Z,,,,,2026-05-13T12:00:00Z,,,1,https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/photos/J-0057_2049_CLT_HWY_mow_photo1.jpg,,,office-backfill,2026-05-29T15:45:33Z
-J-0058,P-005,2049,RNT,Pristine Properties,2026-05-27T12:00:00Z,Pending,1.0,,yes,,,,2026-05-27T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0059,P-005,2049,RNT,Pristine Properties,2026-06-10T12:00:00Z,Pending,2.0,,yes,,,,2026-06-10T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0060,P-005,2049,RNT,Pristine Properties,2026-06-24T12:00:00Z,Pending,1.0,,yes,,,,2026-06-24T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0061,P-005,2049,RNT,Pristine Properties,2026-07-08T12:00:00Z,Pending,2.0,,yes,,,,2026-07-08T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0062,P-005,2049,RNT,Pristine Properties,2026-07-22T12:00:00Z,Pending,1.0,,yes,,,,2026-07-22T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0063,P-005,2049,RNT,Pristine Properties,2026-08-05T12:00:00Z,Pending,2.0,,yes,,,,2026-08-05T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0064,P-005,2049,RNT,Pristine Properties,2026-08-19T12:00:00Z,Pending,1.0,,yes,,,,2026-08-19T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0065,P-005,2049,RNT,Pristine Properties,2026-09-02T12:00:00Z,Pending,2.0,,yes,,,,2026-09-02T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0066,P-005,2049,RNT,Pristine Properties,2026-09-19T12:00:00Z,Pending,1.0,,yes,,,,2026-09-19T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
+J-0044,P-004,ERIC,VAC1,Tony Bolt,2026-05-16T16:00:00.000Z,Done,1.0,,yes,,,,2026-05-16T16:00:00Z,,,,,2026-05-16T16:00:00.000Z,,,0,,,,OFFICE_ALL,2026-05-29T15:59:38.629Z
+J-0045,P-004,ERIC,VAC1,Tony Bolt,2026-05-30T12:00:00.000Z,Pending,1.0,,yes,,,,2026-05-30T12:00:00Z,,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:59:46.073Z
+J-0046,P-004,ERIC,VAC1,Tony Bolt,2026-06-13T12:00:00.000Z,Pending,1.0,,yes,,,,2026-06-13T12:00:00Z,,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:59:46.073Z
+J-0047,P-004,ERIC,VAC1,Tony Bolt,2026-06-27T12:00:00.000Z,Pending,1.0,,yes,,,,2026-06-27T12:00:00Z,,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:59:46.073Z
+J-0048,P-004,ERIC,VAC1,Tony Bolt,2026-07-11T12:00:00.000Z,Pending,1.0,,yes,,,,2026-07-11T12:00:00Z,,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:59:46.073Z
+J-0049,P-004,ERIC,VAC1,Tony Bolt,2026-07-25T12:00:00.000Z,Pending,1.0,,yes,,,,2026-07-25T12:00:00Z,,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:59:46.073Z
+J-0050,P-004,ERIC,VAC1,Tony Bolt,2026-08-08T12:00:00.000Z,Pending,1.0,,yes,,,,2026-08-08T12:00:00Z,,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:59:46.073Z
+J-0051,P-004,ERIC,VAC1,Tony Bolt,2026-08-22T12:00:00.000Z,Pending,1.0,,yes,,,,2026-08-22T12:00:00Z,,,,,,,,0,,,,OFFICE_ALL,2026-05-29T15:59:46.073Z
+J-0057,P-005,2049,RNT,The Farm Crew Landscaping,2026-05-13T12:00:00Z,Done,2.0,,yes,yes,,,2026-05-13T12:00:00Z,The Farm Crew Landscaping,,,,2026-05-13T12:00:00Z,,,1,https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/photos/J-0057_2049_CLT_HWY_mow_photo1.jpg,,,office-backfill,2026-05-29T16:24:29Z
+J-0058,P-005,2049,RNT,The Farm Crew Landscaping,2026-05-27T12:00:00Z,Pending,1.0,,yes,yes,,,2026-05-27T12:00:00Z,The Farm Crew Landscaping,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0059,P-005,2049,RNT,The Farm Crew Landscaping,2026-06-10T12:00:00Z,Pending,2.0,,yes,yes,,,2026-06-10T12:00:00Z,The Farm Crew Landscaping,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0060,P-005,2049,RNT,The Farm Crew Landscaping,2026-06-24T12:00:00Z,Pending,1.0,,yes,yes,,,2026-06-24T12:00:00Z,The Farm Crew Landscaping,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0061,P-005,2049,RNT,The Farm Crew Landscaping,2026-07-08T12:00:00Z,Pending,2.0,,yes,yes,,,2026-07-08T12:00:00Z,The Farm Crew Landscaping,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0062,P-005,2049,RNT,The Farm Crew Landscaping,2026-07-22T12:00:00Z,Pending,1.0,,yes,yes,,,2026-07-22T12:00:00Z,The Farm Crew Landscaping,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0063,P-005,2049,RNT,The Farm Crew Landscaping,2026-08-05T12:00:00Z,Pending,2.0,,yes,yes,,,2026-08-05T12:00:00Z,The Farm Crew Landscaping,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0064,P-005,2049,RNT,The Farm Crew Landscaping,2026-08-19T12:00:00Z,Pending,1.0,,yes,yes,,,2026-08-19T12:00:00Z,The Farm Crew Landscaping,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0065,P-005,2049,RNT,The Farm Crew Landscaping,2026-09-02T12:00:00Z,Pending,2.0,,yes,yes,,,2026-09-02T12:00:00Z,The Farm Crew Landscaping,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0066,P-005,2049,RNT,The Farm Crew Landscaping,2026-09-19T12:00:00Z,Pending,1.0,,yes,yes,,,2026-09-19T12:00:00Z,The Farm Crew Landscaping,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
 J-0067,P-006,BOUND,VAC2,George Jimenez Landscaping,2026-05-27T12:00:00Z,Done,1.0,,yes,,,,2026-05-27T12:00:00Z,,,,,2026-05-27T12:00:00Z,,,0,,,,office-backfill,2026-05-29T15:45:33Z
 J-0068,P-006,BOUND,VAC2,George Jimenez Landscaping,2026-06-26T12:00:00Z,Pending,1.0,,yes,,,,2026-06-26T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
 J-0069,P-006,BOUND,VAC2,George Jimenez Landscaping,2026-07-26T12:00:00Z,Pending,1.0,,yes,,,,2026-07-26T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
@@ -75,23 +75,23 @@ J-0133,P-011,RACE,VAC2,The Farm Crew Landscaping,2026-05-23T12:00:00Z,Pending,1.
 J-0134,P-011,RACE,VAC2,The Farm Crew Landscaping,2026-06-22T12:00:00Z,Pending,1.0,,yes,,,,2026-06-22T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
 J-0135,P-011,RACE,VAC2,The Farm Crew Landscaping,2026-07-22T12:00:00Z,Pending,1.0,,yes,,,,2026-07-22T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
 J-0136,P-011,RACE,VAC2,The Farm Crew Landscaping,2026-08-21T12:00:00Z,Pending,1.0,,yes,,,,2026-08-21T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0138,P-012,707,LUX,Pristine Properties,2026-05-06T12:00:00Z,Done,1.0,,,,,,,,,,,,,,1,https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/photos/J-0138_IMG_2694.jpeg,,,,
-J-0139,P-012,707,LUX,Pristine Properties,2026-05-16T12:00:00Z,Done,2.0,,yes,,,,2026-05-16T12:00:00Z,,,,,2026-05-16T12:00:00Z,,,1,https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/photos/J-0139_IMG_1975.heic,,,office-backfill,2026-05-29T15:45:33Z
-J-0140,P-012,707,LUX,Pristine Properties,2026-05-23T12:00:00Z,Pending,3.0,,yes,,,,2026-05-23T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0141,P-012,707,LUX,Pristine Properties,2026-05-30T12:00:00Z,Pending,4.0,,yes,,,,2026-05-30T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0142,P-012,707,LUX,Pristine Properties,2026-06-06T12:00:00Z,Pending,1.0,,yes,,,,2026-06-06T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0143,P-012,707,LUX,Pristine Properties,2026-06-13T12:00:00Z,Pending,2.0,,yes,,,,2026-06-13T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0144,P-012,707,LUX,Pristine Properties,2026-06-20T12:00:00Z,Pending,3.0,,yes,,,,2026-06-20T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0145,P-012,707,LUX,Pristine Properties,2026-06-27T12:00:00Z,Pending,4.0,,yes,,,,2026-06-27T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0146,P-012,707,LUX,Pristine Properties,2026-07-04T12:00:00Z,Pending,1.0,,yes,,,,2026-07-04T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0147,P-012,707,LUX,Pristine Properties,2026-07-15T12:00:00Z,Pending,3.0,,yes,,,,2026-07-15T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0148,P-012,707,LUX,Pristine Properties,2026-07-26T12:00:00Z,Pending,4.0,,yes,,,,2026-07-26T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0149,P-012,707,LUX,Pristine Properties,2026-08-06T12:00:00Z,Pending,1.0,,yes,,,,2026-08-06T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0150,P-012,707,LUX,Pristine Properties,2026-08-17T12:00:00Z,Pending,2.0,,yes,,,,2026-08-17T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0151,P-012,707,LUX,Pristine Properties,2026-08-28T12:00:00Z,Pending,3.0,,yes,,,,2026-08-28T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0152,P-012,707,LUX,Pristine Properties,2026-09-08T12:00:00Z,Pending,4.0,,yes,,,,2026-09-08T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0153,P-012,707,LUX,Pristine Properties,2026-09-20T12:00:00Z,Pending,1.0,,yes,,,,2026-09-20T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
-J-0154,P-012,707,LUX,Pristine Properties,2026-10-02T12:00:00Z,Pending,2.0,,yes,,,,2026-10-02T12:00:00Z,,,,,,,,0,,,,office-backfill,2026-05-29T15:45:33Z
+J-0138,P-012,707,LUX,Tony Bolt,2026-05-06T12:00:00Z,Done,1.0,,,yes,,,,Tony Bolt,,,,,,,1,https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/photos/J-0138_IMG_2694.jpeg,,,office-reassign,2026-05-29T16:24:29Z
+J-0139,P-012,707,LUX,Tony Bolt,2026-05-16T12:00:00Z,Done,2.0,,yes,yes,,,2026-05-16T12:00:00Z,Tony Bolt,,,,2026-05-16T12:00:00Z,,,1,https://raw.githubusercontent.com/emw-oldwell/oldwell-mowing-dashboard/main/photos/J-0139_IMG_1975.heic,,,office-backfill,2026-05-29T16:24:29Z
+J-0140,P-012,707,LUX,Tony Bolt,2026-05-23T12:00:00Z,Pending,3.0,,yes,yes,,,2026-05-23T12:00:00Z,Tony Bolt,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0141,P-012,707,LUX,Tony Bolt,2026-05-30T12:00:00Z,Pending,4.0,,yes,yes,,,2026-05-30T12:00:00Z,Tony Bolt,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0142,P-012,707,LUX,Tony Bolt,2026-06-06T12:00:00Z,Pending,1.0,,yes,yes,,,2026-06-06T12:00:00Z,Tony Bolt,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0143,P-012,707,LUX,Tony Bolt,2026-06-13T12:00:00Z,Pending,2.0,,yes,yes,,,2026-06-13T12:00:00Z,Tony Bolt,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0144,P-012,707,LUX,Tony Bolt,2026-06-20T12:00:00Z,Pending,3.0,,yes,yes,,,2026-06-20T12:00:00Z,Tony Bolt,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0145,P-012,707,LUX,Tony Bolt,2026-06-27T12:00:00Z,Pending,4.0,,yes,yes,,,2026-06-27T12:00:00Z,Tony Bolt,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0146,P-012,707,LUX,Tony Bolt,2026-07-04T12:00:00Z,Pending,1.0,,yes,yes,,,2026-07-04T12:00:00Z,Tony Bolt,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0147,P-012,707,LUX,Tony Bolt,2026-07-15T12:00:00Z,Pending,3.0,,yes,yes,,,2026-07-15T12:00:00Z,Tony Bolt,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0148,P-012,707,LUX,Tony Bolt,2026-07-26T12:00:00Z,Pending,4.0,,yes,yes,,,2026-07-26T12:00:00Z,Tony Bolt,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0149,P-012,707,LUX,Tony Bolt,2026-08-06T12:00:00Z,Pending,1.0,,yes,yes,,,2026-08-06T12:00:00Z,Tony Bolt,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0150,P-012,707,LUX,Tony Bolt,2026-08-17T12:00:00Z,Pending,2.0,,yes,yes,,,2026-08-17T12:00:00Z,Tony Bolt,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0151,P-012,707,LUX,Tony Bolt,2026-08-28T12:00:00Z,Pending,3.0,,yes,yes,,,2026-08-28T12:00:00Z,Tony Bolt,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0152,P-012,707,LUX,Tony Bolt,2026-09-08T12:00:00Z,Pending,4.0,,yes,yes,,,2026-09-08T12:00:00Z,Tony Bolt,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0153,P-012,707,LUX,Tony Bolt,2026-09-20T12:00:00Z,Pending,1.0,,yes,yes,,,2026-09-20T12:00:00Z,Tony Bolt,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
+J-0154,P-012,707,LUX,Tony Bolt,2026-10-02T12:00:00Z,Pending,2.0,,yes,yes,,,2026-10-02T12:00:00Z,Tony Bolt,,,,,,,0,,,,office-backfill,2026-05-29T16:24:29Z
 J-0156,P-006,BOUND,VAC2,George Jimenez Landscaping,2026-05-10T12:00:00Z,Done,,,,,,,,,,,,,,,0,,,,,
 J-0157,P-008,15TH,VAC2,George Jimenez Landscaping,2026-05-10T12:00:00Z,Done,,,,,,,,,,,,,,,0,,,,,
 J-0158,P-007,CHURCH,VAC2,George Jimenez Landscaping,2026-04-22T12:00:00Z,Done,,,,,,,,,,,,,,,0,,,,,
