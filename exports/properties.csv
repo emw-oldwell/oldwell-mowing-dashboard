@@ -2,7 +2,7 @@ PropertyID,PropertyNickname,TypeID,DefaultContractor,TotalJobs,DoneJobs,PendingJ
 P-008,15TH,VAC2,George Jimenez Landscaping,4,2,2,0,2026-05-27,2026-06-26,9
 P-005,2049,RNT,The Farm Crew Landscaping,10,1,9,0,2026-05-13,2026-06-10,23
 P-012,707,LUX,Tony Bolt,17,4,13,0,2026-05-30,2026-06-06,6
-P-013,BLUE HOMER,RNT,The Farm Crew Landscaping,20,0,20,0,,2026-06-17,
+P-013,BLUE HOMER,RNT,The Farm Crew Landscaping,20,2,18,0,2026-06-03,2026-06-17,2
 P-006,BOUND,VAC2,George Jimenez Landscaping,4,2,2,0,2026-05-27,2026-06-26,9
 P-007,CHURCH,VAC2,George Jimenez Landscaping,5,2,3,0,2026-05-27,2026-06-26,9
 P-009,DON1,VAC2,Lawn Pro Guys,5,1,4,0,2026-04-26,2026-06-25,40
