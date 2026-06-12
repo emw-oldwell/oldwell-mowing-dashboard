@@ -1,13 +1,13 @@
 PropertyID,PropertyNickname,TypeID,DefaultContractor,TotalJobs,DoneJobs,PendingJobs,CancelledJobs,LastDoneDate,NextScheduledDate,DaysSinceLastDone
 P-008,15TH,VAC2,George Jimenez Landscaping,4,2,2,0,2026-05-27,2026-06-26,16
-P-005,2049,RNT,The Farm Crew Landscaping,10,1,9,0,2026-05-13,2026-06-22,30
-P-012,707,LUX,Tony Bolt,17,4,13,0,2026-05-30,2026-06-13,13
+P-005,2049,RNT,The Farm Crew Landscaping,10,2,8,0,2026-06-08,2026-06-22,4
+P-012,707,LUX,Tony Bolt,17,4,13,0,2026-05-30,2026-06-14,13
 P-013,BLUE HOMER,RNT,The Farm Crew Landscaping,20,2,18,0,2026-06-03,2026-06-17,9
 P-006,BOUND,VAC2,George Jimenez Landscaping,4,2,2,0,2026-05-27,2026-06-26,16
 P-007,CHURCH,VAC2,George Jimenez Landscaping,5,2,3,0,2026-05-27,2026-06-26,16
 P-009,DON1,VAC2,Lawn Pro Guys,5,1,4,0,2026-04-26,2026-06-25,47
 P-004,ERIC,VAC1,Tony Bolt,9,3,6,0,2026-05-30,2026-06-13,13
-P-001,MIMI,LUX,Tony Bolt,17,4,13,0,2026-05-30,2026-06-14,13
+P-001,MIMI,LUX,Tony Bolt,17,5,11,1,2026-06-07,2026-06-14,5
 P-003,PRESTON,VAC1,Tony Bolt,9,3,6,0,2026-05-30,2026-06-13,13
-P-011,RACE,VAC2,The Farm Crew Landscaping,5,1,4,0,2026-04-23,2026-06-22,50
-P-002,RACEWAY,RNT,The Farm Crew Landscaping,11,1,10,0,2026-05-08,2026-06-19,35
+P-011,RACE,VAC2,The Farm Crew Landscaping,5,2,3,0,2026-06-06,2026-07-06,6
+P-002,RACEWAY,RNT,The Farm Crew Landscaping,11,2,9,0,2026-06-05,2026-06-19,7
