@@ -1,7 +1,7 @@
 PropertyID,PropertyNickname,TypeID,DefaultContractor,TotalJobs,DoneJobs,PendingJobs,CancelledJobs,LastDoneDate,NextScheduledDate,DaysSinceLastDone
 P-008,15TH,VAC2,George Jimenez Landscaping,4,2,2,0,2026-05-27,2026-07-26,35
 P-005,2049,RNT,The Farm Crew Landscaping,10,3,7,0,2026-06-08,2026-07-06,23
-P-014,526 W IREDELL,VAC2,The Farm Crew Landscaping,10,0,10,0,,2026-07-25,
+P-014,526 W IREDELL,VAC2,The Farm Crew Landscaping,10,2,8,0,2026-06-25,2026-07-25,6
 P-012,707,LUX,Tony Bolt,17,6,11,0,2026-06-28,2026-07-05,3
 P-013,BLUE HOMER,RNT,The Farm Crew Landscaping,20,2,18,0,2026-06-03,2026-07-01,28
 P-006,BOUND,VAC2,George Jimenez Landscaping,4,2,2,0,2026-05-27,2026-07-26,35
