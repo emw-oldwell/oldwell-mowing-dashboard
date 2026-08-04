@@ -15,6 +15,9 @@
 <script>
   // Cross-device sync backend. Set to '' to disable sync (localStorage-only mode).
   window.OLDWELL_SYNC_BASE = 'https://oldwell-mowing-api.vercel.app';
+  // Shipped to the browser, so treat it as a speed bump rather than a secret.
+  // It stops scripted abuse of the write endpoints; per-contractor tokens replace it.
+  window.OLDWELL_APP_KEY = '8a624184cf3aefc94f9e2baed5d125670724ccf6ce19cb62';
 </script>
 <style>
 :root {
@@ -772,6 +775,8 @@ const OFFICE_EMAIL = 'mow@oldwellco.com';
 // (e.g. "https://oldwell-mowing.vercel.app") to enable cloud writeback.
 // When unset, the app falls back to localStorage-only + the mailto Notify path.
 const SYNC_BASE = (typeof window !== 'undefined' && window.OLDWELL_SYNC_BASE) || '';
+const APP_KEY = (typeof window !== 'undefined' && window.OLDWELL_APP_KEY) || '';
+const WRITE_HEADERS = { 'Content-Type': 'application/json', 'X-App-Key': APP_KEY };
 const SYNC_POLL_MS = 30000;
 
 const TYPE_LABELS = { LUX: 'Lux', VAC1: 'Vacant 1', VAC2: 'Vacant 2', RNT: 'Rental' };
@@ -968,7 +973,7 @@ async function doPushEvent(jobId, customJob) {
   try {
     const r = await fetch(SYNC_BASE + '/api/event', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: WRITE_HEADERS,
       body: JSON.stringify({ jobId, event: eventForWire, customJob }),
     });
     if (!r.ok) throw new Error('event POST ' + r.status);
@@ -992,7 +997,7 @@ async function deleteEntry(jobId) {
   try {
     const r = await fetch(SYNC_BASE + '/api/delete', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: WRITE_HEADERS,
       body: JSON.stringify({ jobId, deletePhotos: true }),
     });
     if (!r.ok) throw new Error('delete ' + r.status);
@@ -1012,7 +1017,7 @@ async function uploadPhoto(jobId, dataUrl, filename) {
   try {
     const r = await fetch(SYNC_BASE + '/api/photo', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: WRITE_HEADERS,
       body: JSON.stringify({ jobId, dataUrl, filename: filename || 'photo.jpg' }),
     });
     if (!r.ok) throw new Error('photo POST ' + r.status);
@@ -1731,7 +1736,7 @@ async function doEditProperty(propKey, sampleJob) {
   try {
     const r = await fetch(SYNC_BASE + '/api/property', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: WRITE_HEADERS,
       body: JSON.stringify({ property: updatedRecord, jobs: [] }),
     });
     if (!r.ok) throw new Error('property update ' + r.status);
@@ -1876,7 +1881,7 @@ async function doAddProperty() {
   try {
     const r = await fetch(SYNC_BASE + '/api/property', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: WRITE_HEADERS,
       body: JSON.stringify({
         property: { id: propId, nickname: nick, typeId, contractor, seasonStart: startStr, addedBy: state.signedInAs || 'app' },
         jobs,
@@ -1897,7 +1902,7 @@ async function doAddPropertyRetry(propId, nick, typeId, contractor, startStr, jo
   try {
     const r = await fetch(SYNC_BASE + '/api/property', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: WRITE_HEADERS,
       body: JSON.stringify({
         property: { id: propId, nickname: nick, typeId, contractor, seasonStart: startStr, addedBy: state.signedInAs || 'app' },
         jobs,
@@ -2090,7 +2095,7 @@ async function doAddCrew() {
   try {
     const r = await fetch(SYNC_BASE + '/api/crew', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: WRITE_HEADERS,
       body: JSON.stringify({ crew: { name, email, phone, notes, addedBy: state.signedInAs || 'app' } }),
     });
     if (!r.ok) throw new Error('crew POST ' + r.status);
@@ -2108,7 +2113,7 @@ async function doAddCrewRetry(name, email, phone, notes) {
   try {
     const r = await fetch(SYNC_BASE + '/api/crew', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: WRITE_HEADERS,
       body: JSON.stringify({ crew: { name, email, phone, notes, addedBy: state.signedInAs || 'app' } }),
     });
     if (r.ok) { syncState.lastPushAt = Date.now(); updateSyncIndicator(); }

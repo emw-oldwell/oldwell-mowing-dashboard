@@ -2,14 +2,16 @@
 // Body: { jobId: string, filename: string, dataUrl: "data:image/jpeg;base64,..." }
 // Returns: { url: "https://raw.githubusercontent.com/.../photos/J-NNNN_TIMESTAMP_filename" }
 
-const { putFile, setCors, assertConfigured, REPO, BRANCH } = require('./_github');
+const { putFile, assertConfigured, REPO, BRANCH } = require('./_github');
+const { setCors, requireAuth } = require('./_auth');
 
 const MAX_BYTES = 4 * 1024 * 1024; // 4 MB cap per photo
 
 module.exports = async function handler(req, res) {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+  if (!requireAuth(req, res)) return;
   if (!assertConfigured(res)) return;
 
   const { jobId, filename, dataUrl } = req.body || {};

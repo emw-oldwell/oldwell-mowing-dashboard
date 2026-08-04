@@ -3,16 +3,18 @@
 // best-effort delete any photo files referenced by that overlay.
 // Body: { jobId: string, deletePhotos?: boolean (default true) }
 
-const { getFile, putFile, deleteFile, setCors, assertConfigured } = require('./_github');
+const { getFile, putFile, deleteFile, assertConfigured } = require('./_github');
+const { setCors, requireAuth } = require('./_auth');
 
 const MAX_RETRIES = 5;
 const EVENTS_PATH = 'events.json';
 const TOMBSTONE_TTL_DAYS = 90;
 
 module.exports = async function handler(req, res) {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+  if (!requireAuth(req, res)) return;
   if (!assertConfigured(res)) return;
 
   const { jobId, deletePhotos = true } = req.body || {};

@@ -3,15 +3,17 @@
 // The event becomes the latest overlay for that JobID. Last-write-wins per job,
 // gated by event.lastUpdate timestamp so out-of-order POSTs don't clobber newer state.
 
-const { getFile, putFile, setCors, assertConfigured } = require('./_github');
+const { getFile, putFile, assertConfigured } = require('./_github');
+const { setCors, requireAuth } = require('./_auth');
 
 const MAX_RETRIES = 5;
 const EVENTS_PATH = 'events.json';
 
 module.exports = async function handler(req, res) {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+  if (!requireAuth(req, res)) return;
   if (!assertConfigured(res)) return;
 
   const { jobId, event, customJob } = req.body || {};

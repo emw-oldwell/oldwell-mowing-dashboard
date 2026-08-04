@@ -5,16 +5,18 @@
 // and every generated job to events.json.customJobs. One PUT, one commit,
 // atomic across both. Each client picks both up on its next 30-s poll.
 
-const { getFile, putFile, setCors, assertConfigured } = require('./_github');
+const { getFile, putFile, assertConfigured } = require('./_github');
+const { setCors, requireAuth } = require('./_auth');
 
 const MAX_RETRIES = 5;
 const EVENTS_PATH = 'events.json';
 const MAX_JOBS_PER_PROPERTY = 60;
 
 module.exports = async function handler(req, res) {
-  setCors(res);
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+  if (!requireAuth(req, res)) return;
   if (!assertConfigured(res)) return;
 
   const { property, jobs } = req.body || {};
