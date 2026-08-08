@@ -1,14 +1,14 @@
 PropertyID,PropertyNickname,TypeID,DefaultContractor,TotalJobs,DoneJobs,PendingJobs,CancelledJobs,LastDoneDate,NextScheduledDate,DaysSinceLastDone
-P-008,15TH,VAC2,George Jimenez Landscaping,4,4,0,0,2026-07-02,,36
-P-005,2049,RNT,The Farm Crew Landscaping,10,6,4,0,2026-07-20,2026-08-17,18
-P-014,526 W IREDELL,VAC2,The Farm Crew Landscaping,10,4,6,0,2026-07-25,2026-08-24,13
-P-012,707,LUX,Tony Bolt,17,10,7,0,2026-08-06,2026-08-17,1
-P-013,BLUE HOMER,RNT,The Farm Crew Landscaping,20,8,12,0,2026-07-18,2026-08-15,20
-P-006,BOUND,VAC2,George Jimenez Landscaping,4,3,1,0,2026-07-04,,34
-P-007,CHURCH,VAC2,George Jimenez Landscaping,5,4,1,0,2026-07-02,,36
-P-009,DON1,VAC2,Lawn Pro Guys,4,3,1,0,2026-07-25,2026-08-24,13
-P-004,ERIC,VAC1,Tony Bolt,9,7,2,0,2026-07-26,2026-08-09,12
-P-001,MIMI,LUX,Tony Bolt,16,8,8,0,2026-07-19,2026-08-11,19
-P-003,PRESTON,VAC1,Tony Bolt,9,7,2,0,2026-07-26,2026-08-09,12
-P-011,RACE,VAC2,The Farm Crew Landscaping,5,4,1,0,2026-07-06,,32
-P-002,RACEWAY,RNT,The Farm Crew Landscaping,10,5,5,0,2026-07-20,2026-08-17,18
+P-008,15TH,VAC2,George Jimenez Landscaping,4,4,0,0,2026-07-02,,37
+P-005,2049,RNT,The Farm Crew Landscaping,10,6,4,0,2026-07-20,2026-08-17,19
+P-014,526 W IREDELL,VAC2,The Farm Crew Landscaping,10,4,6,0,2026-07-25,2026-08-24,14
+P-012,707,LUX,Tony Bolt,17,10,7,0,2026-08-06,2026-08-17,2
+P-013,BLUE HOMER,RNT,The Farm Crew Landscaping,20,8,12,0,2026-07-18,2026-08-15,21
+P-006,BOUND,VAC2,George Jimenez Landscaping,4,3,1,0,2026-07-04,,35
+P-007,CHURCH,VAC2,George Jimenez Landscaping,5,4,1,0,2026-07-02,,37
+P-009,DON1,VAC2,Lawn Pro Guys,4,3,1,0,2026-07-25,2026-08-24,14
+P-004,ERIC,VAC1,Tony Bolt,9,7,2,0,2026-07-26,2026-08-09,13
+P-001,MIMI,LUX,Tony Bolt,16,8,8,0,2026-07-19,2026-08-11,20
+P-003,PRESTON,VAC1,Tony Bolt,9,7,2,0,2026-07-26,2026-08-09,13
+P-011,RACE,VAC2,The Farm Crew Landscaping,5,4,1,0,2026-07-06,,33
+P-002,RACEWAY,RNT,The Farm Crew Landscaping,10,5,5,0,2026-07-20,2026-08-17,19
